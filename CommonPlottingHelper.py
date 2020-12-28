@@ -100,7 +100,7 @@ def compareCDF(data,
                 linewidth=1,
                 label='True Model')
 
-    ax.legend(loc='lower center')
+    ax.legend(loc='upper left')
     ax.set(xlabel='Input value', ylabel='%')
     ax.set_title(title)
 

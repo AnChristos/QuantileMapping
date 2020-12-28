@@ -17,12 +17,12 @@ def testlogNormal():
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do know the true model
     '''
-    distortion = 0.2
-    lognormS = 0.5
-    NumData = 10000
-    NumSimul = 50000
-    trueModel = scipy.stats.lognorm(s=lognormS)
-    distortedModel = scipy.stats.lognorm(s=lognormS, loc=distortion)
+    shift = 0.5
+    smear = 1.2
+    NumData = 20000
+    NumSimul = 40000
+    trueModel = scipy.stats.norm()
+    distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
 
@@ -44,10 +44,12 @@ def testlogNormal():
 
     # pdf histograms
     # window for histograms
-    minhist = 0
+    minhist = -5
     maxhist = 5
-    histBins = 75
+    histBins = 50
+    cdfBins = 100
     binning = np.linspace(minhist, maxhist, histBins)
+    cdfbinning = np.linspace(minhist, maxhist, cdfBins)
     compareHist(data=data,
                 simul=simul,
                 corrected=exactQMCorr,
@@ -60,7 +62,7 @@ def testlogNormal():
                simul=simul,
                corrected=exactQMCorr,
                trueModel=trueModel,
-               cdfbinning=binning,
+               cdfbinning=cdfbinning,
                title='Using "exact" Parametric QM',
                name='ExactQMcdf.png')
 
@@ -76,7 +78,7 @@ def testlogNormal():
                simul=simul,
                corrected=nonParamQMCorr,
                trueModel=trueModel,
-               cdfbinning=binning,
+               cdfbinning=cdfbinning,
                title='Non - Parametric QM',
                name='NonParamQMcdf.png')
 
