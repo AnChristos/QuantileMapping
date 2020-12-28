@@ -38,7 +38,7 @@ def testlogNormal():
     QMnonParam = fitNonParametricQMSpline(data,
                                           simul,
                                           targetPerc=perc,
-                                          bootstrapMode='data')
+                                          bootstrapMode='both')
 
     nonParamQMCorr = QMnonParam.nominal(simul)
 
