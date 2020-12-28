@@ -5,19 +5,7 @@ from QuantileMapping.NonParametricQMSpline import (
 from QuantileMapping.ParametricQM import (
     parametricQM)
 from CommonPlottingHelper import (
-    compareHist)
-
-
-class logNormWrapper:
-    def __init__(self, s, loc):
-        self.s = s
-        self.loc = loc
-
-    def cdf(self, x):
-        return scipy.stats.lognorm.cdf(x, self.s, self.loc)
-
-    def ppf(self, q):
-        return scipy.stats.lognorm.ppf(q, self.s, self.loc)
+    compareHist, compareCDF)
 
 
 def testlogNormal():
@@ -26,41 +14,25 @@ def testlogNormal():
     distribution.
 
     Apply:
-     - exact paramtric QM
-     - non parametric QM
+     - exact parametric QM since we know the exact true model
+     - non parametric QM pretending we do know the true model
     '''
     distortion = 0.2
     lognormS = 0.5
     NumData = 10000
     NumSimul = 50000
-    data = scipy.stats.lognorm.rvs(s=lognormS,
-                                   size=NumData)
-    simul = scipy.stats.lognorm.rvs(s=lognormS,
-                                    loc=distortion,
-                                    size=NumSimul)
-
-    # window for histograms
-    minhist = 0
-    maxhist = 5
-    histBins = 75
-    binning = np.linspace(minhist, maxhist, histBins)
+    trueModel = scipy.stats.lognorm(s=lognormS)
+    distortedModel = scipy.stats.lognorm(s=lognormS, loc=distortion)
+    data = trueModel.rvs(size=NumData)
+    simul = distortedModel.rvs(size=NumSimul)
 
     # Do pefect parametric correction
-    knownppf = logNormWrapper(s=lognormS, loc=0)
-    knowncdf = logNormWrapper(s=lognormS, loc=distortion)
-    exactQMCorr = parametricQM(simul, knownppf, knowncdf)
-    compareHist(data=data,
-                simul=simul,
-                corrected=exactQMCorr,
-                trueModel=scipy.stats.lognorm(s=lognormS),
-                binning=binning,
-                title='Using "exact" Parametric QM',
-                name='ExactQM.png')
+    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 
     # Do non-parametric QM correction
     LowPercentile = 0.0
     HighPercentile = 100
-    numBins = 500
+    numBins = 1000
     perc = np.linspace(
         LowPercentile, HighPercentile, numBins)
     QMnonParam = fitNonParametricQMSpline(data,
@@ -69,13 +41,44 @@ def testlogNormal():
                                           bootstrapMode='data')
 
     nonParamQMCorr = QMnonParam.nominal(simul)
+
+    # pdf histograms
+    # window for histograms
+    minhist = 0
+    maxhist = 5
+    histBins = 75
+    binning = np.linspace(minhist, maxhist, histBins)
+    compareHist(data=data,
+                simul=simul,
+                corrected=exactQMCorr,
+                trueModel=trueModel,
+                binning=binning,
+                title='Using "exact" Parametric QM',
+                name='ExactQMpdf.png')
+
+    compareCDF(data=data,
+               simul=simul,
+               corrected=exactQMCorr,
+               trueModel=trueModel,
+               cdfbinning=binning,
+               title='Using "exact" Parametric QM',
+               name='ExactQMcdf.png')
+
     compareHist(data=data,
                 simul=simul,
                 corrected=nonParamQMCorr,
-                trueModel=scipy.stats.lognorm(s=lognormS),
+                trueModel=trueModel,
                 binning=binning,
                 title='Non - Parametric QM',
-                name='NonParamQM.png')
+                name='NonParamQMpdf.png')
+
+    compareCDF(data=data,
+               simul=simul,
+               corrected=nonParamQMCorr,
+               trueModel=trueModel,
+               cdfbinning=binning,
+               title='Non - Parametric QM',
+               name='NonParamQMcdf.png')
 
 
 if __name__ == "__main__":

@@ -9,14 +9,12 @@ def compareHist(data,
                 binning,
                 title,
                 name):
-    ''' Helper for some plots that are common among methods  '''
+    ''' Helper for pdf plots that are common among methods  '''
 
     dataColour = 'black'
     simulColour = 'skyblue'
     correctionColour = 'crimson'
 
-    # Histo plots
-    # data vs simulation
     fig, ax = plt.subplots()
     # data
     ax.hist(data,
@@ -55,3 +53,55 @@ def compareHist(data,
     ax.set_title(title)
 
     fig.savefig(name, dpi=300)
+
+
+def compareCDF(data,
+               simul,
+               corrected,
+               trueModel,
+               cdfbinning,
+               title,
+               name):
+    ''' Helper for pdf plots that are common among methods  '''
+
+    dataColour = 'black'
+    simulColour = 'skyblue'
+    correctionColour = 'crimson'
+
+    fig, ax = plt.subplots()
+    ax.hist(data,
+            bins=cdfbinning,
+            cumulative=1,
+            histtype='step',
+            color=dataColour,
+            density=True,
+            label='data')
+
+    ax.hist(simul,
+            bins=cdfbinning,
+            cumulative=1,
+            histtype='step',
+            color=simulColour,
+            density=True,
+            label='simulation')
+
+    ax.hist(corrected,
+            bins=cdfbinning,
+            cumulative=1,
+            histtype='step',
+            color=correctionColour,
+            density=True,
+            label='corrected')
+    if trueModel is not None:
+        x = np.linspace(cdfbinning[0], cdfbinning[-1], 500)
+        ax.plot(x,
+                trueModel.cdf(x),
+                color='grey',
+                linewidth=1,
+                label='True Model')
+
+    ax.legend(loc='lower center')
+    ax.set(xlabel='Input value', ylabel='%')
+    ax.set_title(title)
+
+    fig.savefig(name, dpi=300,)
