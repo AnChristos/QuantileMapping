@@ -8,10 +8,9 @@ from CommonPlottingHelper import (
     compareHist, compareCDF)
 
 
-def testlogNormal():
+def testExample():
     '''
-    Create a nominal and a distorted invert normal
-    distribution.
+    Create a nominal and a distorted distribution
 
     Apply:
      - exact parametric QM since we know the exact true model
@@ -84,4 +83,4 @@ def testlogNormal():
 
 
 if __name__ == "__main__":
-    testlogNormal()
+    testExample()
