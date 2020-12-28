@@ -5,9 +5,8 @@ import matplotlib.pyplot as plt
 def compareHist(data,
                 simul,
                 corrected,
-                minhist,
-                maxhist,
-                histBins,
+                trueModel,
+                binning,
                 title,
                 name):
     ''' Helper for some plots that are common among methods  '''
@@ -17,7 +16,6 @@ def compareHist(data,
     correctionColour = 'crimson'
 
     # Histo plots
-    binning = np.linspace(minhist, maxhist, histBins)
     # data vs simulation
     fig, ax = plt.subplots()
     # data
@@ -43,6 +41,15 @@ def compareHist(data,
             histtype='step',
             color=correctionColour,
             label='corrected')
+
+    if trueModel is not None:
+        x = np.linspace(binning[0], binning[-1], 500)
+        ax.plot(x,
+                trueModel.pdf(x),
+                color='grey',
+                linewidth=1,
+                label='True Model')
+
     ax.legend(loc='center right')
     ax.set(xlabel='x', ylabel='pdf(x)')
     ax.set_title(title)

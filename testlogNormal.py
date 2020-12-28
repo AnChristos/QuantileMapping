@@ -29,12 +29,11 @@ def testlogNormal():
      - exact paramtric QM
      - non parametric QM
     '''
-    distortion = 0.25
+    distortion = 0.2
     lognormS = 0.5
     NumData = 10000
     NumSimul = 50000
     data = scipy.stats.lognorm.rvs(s=lognormS,
-                                   loc=0,
                                    size=NumData)
     simul = scipy.stats.lognorm.rvs(s=lognormS,
                                     loc=distortion,
@@ -44,6 +43,7 @@ def testlogNormal():
     minhist = 0
     maxhist = 5
     histBins = 75
+    binning = np.linspace(minhist, maxhist, histBins)
 
     # Do pefect parametric correction
     knownppf = logNormWrapper(s=lognormS, loc=0)
@@ -52,9 +52,8 @@ def testlogNormal():
     compareHist(data=data,
                 simul=simul,
                 corrected=exactQMCorr,
-                minhist=minhist,
-                maxhist=maxhist,
-                histBins=histBins,
+                trueModel=scipy.stats.lognorm(s=lognormS),
+                binning=binning,
                 title='Using "exact" Parametric QM',
                 name='ExactQM.png')
 
@@ -73,9 +72,8 @@ def testlogNormal():
     compareHist(data=data,
                 simul=simul,
                 corrected=nonParamQMCorr,
-                minhist=minhist,
-                maxhist=maxhist,
-                histBins=histBins,
+                trueModel=scipy.stats.lognorm(s=lognormS),
+                binning=binning,
                 title='Non - Parametric QM',
                 name='NonParamQM.png')
 
