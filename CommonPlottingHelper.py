@@ -108,8 +108,9 @@ def compareCDF(data,
 
 
 def compareMethods(data,
+                   simul,
                    QMExact,
-                   ParametricQQ,
+                   NonParametricQQ,
                    binning,
                    title,
                    name):
@@ -135,7 +136,7 @@ def compareMethods(data,
             label='Exact QM')
 
     # Non parametric QQ
-    ax.hist(ParametricQQ,
+    ax.hist(NonParametricQQ,
             bins=binning,
             density=True,
             histtype='step',
@@ -144,6 +145,45 @@ def compareMethods(data,
 
     ax.legend(loc='best')
     ax.set(xlabel='x', ylabel='pdf(x)')
+    ax.set_title(title)
+
+    fig.savefig(name, dpi=300)
+
+
+def compareCorrection(simul,
+                      QMExact,
+                      NonParametricQQ,
+                      NonParametricQQDown,
+                      NonParametricQQUp,
+                      title,
+                      name):
+    ExactColour = 'skyblue'
+    QQColour = 'crimson'
+
+    sortedSimul = np.sort(simul)
+    sortedExact = np.sort(QMExact)
+    sortedQQ = np.sort(NonParametricQQ)
+    sortedQQUp = np.sort(NonParametricQQUp)
+    sortedQQDown = np.sort(NonParametricQQDown)
+    fig, ax = plt.subplots()
+    ax.plot(sortedSimul,
+            sortedExact,
+            color=ExactColour,
+            label='Exact QM')
+    ax.plot(sortedSimul,
+            sortedQQ,
+            color=QQColour,
+            label='Non parametric qq')
+    ax.plot(sortedSimul,
+            sortedQQUp,
+            color='grey',
+            label='uncertainty')
+    ax.plot(sortedSimul,
+            sortedQQDown,
+            color='grey',
+            label='uncertainty')
+    ax.legend(loc='best')
+    ax.set(xlabel='input ', ylabel='corrected input')
     ax.set_title(title)
 
     fig.savefig(name, dpi=300)

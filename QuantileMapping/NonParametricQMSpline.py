@@ -150,31 +150,27 @@ class fitNonParametricQMSpline:
         # Prepare for smooth bootstrap with normal Kernel
         normal = scipy.stats.norm()
         lenData = len(data)
-        meanData = np.mean(data)
         varData = np.var(data)
         effSigmaData = min(math.sqrt(varData), scipy.stats.iqr(
             data)/1.34)
         hdata = 0.9 * effSigmaData * math.pow(lenData, -0.2)
-        shrinkData = math.sqrt(1 + (hdata*hdata) * 1./varData)
+
         lenSimul = len(simul)
-        meanSimul = np.mean(simul)
         varSimul = np.var(simul)
         effSigmaSim = min(math.sqrt(varSimul), scipy.stats.iqr(
             simul)/1.34)
         hsimul = 0.9 * effSigmaSim * math.pow(lenSimul, -0.2)
-        shrinkSimul = math.sqrt(1 + (hsimul*hsimul) * 1./varSimul)
 
         # create bootstraps
         for i in range(numBootstrap):
             # resample the inputs with replacement with random noise
             epsData = normal.rvs(size=data.size)
             iData = np.random.choice(data, lenData, replace=True)
-            iData = meanData + (iData - meanData + hdata*epsData)/shrinkData
+            iData = iData + hdata*epsData
 
             epsSimul = normal.rvs(size=simul.size)
             iSimul = np.random.choice(simul, lenSimul, replace=True)
-            iSimul = meanSimul + (iSimul - meanSimul +
-                                  hsimul*epsSimul)/shrinkSimul
+            iSimul = iSimul + hsimul*epsSimul
             # create a mapping from the resamples
             percentileData = np.percentile(
                 iData,
@@ -193,12 +189,12 @@ class fitNonParametricQMSpline:
             bootstrapResults[i] = correctionRepl(self._uncorrected)
 
         # Calculate up, down , nominal
-        quant = np.array([2.5, 50.0, 97.5])
+        quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
-            down, median, up = np.percentile(bootstrapResults[:, i],
-                                             q=quant,
-                                             interpolation=percInterpolation)
-            self._nominal[i] = median
+            down, up = np.percentile(bootstrapResults[:, i],
+                                     q=quant,
+                                     interpolation=percInterpolation)
+            self._nominal[i] = 0.5 * (down+up)
             self._down[i] = down
             self._up[i] = up
 
@@ -241,25 +237,24 @@ class fitNonParametricQMSpline:
         effSigmaData = min(math.sqrt(varData), scipy.stats.iqr(
             data)/1.34)
         hdata = 0.9 * effSigmaData * math.pow(lenData, -0.2)
-        shrinkData = math.sqrt(1 + (hdata*hdata) * 1./varData)
         # create bootstraps
         for i in range(numBootstrap):
             # resample the inputs with replacement with random noise
             epsData = normal.rvs(size=data.size)
             iData = np.random.choice(data, lenData, replace=True)
-            iData = meanData + (iData - meanData + hdata*epsData)/shrinkData
+            iData = iData - meanData + hdata*epsData
             bootstrapResults[i] = np.percentile(
                 iData,
                 q=targetPerc,
                 interpolation=percInterpolation)
 
         # down,nominal,up
-        quant = np.array([2.5, 50, 97.5])
+        quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
-            down, median, up = np.percentile(bootstrapResults[:, i],
-                                             q=quant,
-                                             interpolation=percInterpolation)
-            self._nominal[i] = median
+            down,  up = np.percentile(bootstrapResults[:, i],
+                                      q=quant,
+                                      interpolation=percInterpolation)
+            self._nominal[i] = 0.5 * (down+up)
             self._down[i] = down
             self._up[i] = up
 

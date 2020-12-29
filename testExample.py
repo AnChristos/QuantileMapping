@@ -5,7 +5,7 @@ from QuantileMapping.NonParametricQMSpline import (
 from QuantileMapping.ParametricQM import (
     parametricQM)
 from CommonPlottingHelper import (
-    compareHist, compareCDF, compareMethods)
+    compareHist, compareCDF, compareMethods, compareCorrection)
 
 
 def testExample():
@@ -19,7 +19,7 @@ def testExample():
     shift = 0.5
     smear = 1.2
     NumData = 20000
-    NumSimul = 40000
+    NumSimul = 60000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -29,8 +29,8 @@ def testExample():
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 
     # Do non-parametric QM correction
-    LowPercentile = 0.
-    HighPercentile = 100.
+    LowPercentile = 0
+    HighPercentile = 100
     numBins = 1000
     perc = np.linspace(
         LowPercentile, HighPercentile, numBins)
@@ -39,6 +39,8 @@ def testExample():
                                           targetPerc=perc)
 
     nonParamQMCorr = QMnonParam.nominal(simul)
+    nonParamQMCorrUp = QMnonParam.up(simul)
+    nonParamQMCorrDown = QMnonParam.down(simul)
 
     # pdf histograms
     # window for histograms
@@ -49,12 +51,21 @@ def testExample():
     binning = np.linspace(minhist, maxhist, histBins)
     cdfbinning = np.linspace(minhist, maxhist, cdfBins)
 
+    compareCorrection(simul=simul,
+                      QMExact=exactQMCorr,
+                      NonParametricQQ=nonParamQMCorr,
+                      NonParametricQQDown=nonParamQMCorrDown,
+                      NonParametricQQUp=nonParamQMCorrUp,
+                      title="Compare corrections",
+                      name="CorrectionCompare.png")
+
     compareMethods(data=data,
+                   simul=simul,
                    QMExact=exactQMCorr,
-                   ParametricQQ=nonParamQMCorr,
+                   NonParametricQQ=nonParamQMCorr,
                    binning=binning,
-                   title="Compare corrections",
-                   name="CorrectionCompare.png")
+                   title="Compare Methods",
+                   name="MethodCompare.png")
 
     compareHist(data=data,
                 simul=simul,
