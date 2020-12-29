@@ -107,15 +107,25 @@ def compareCDF(data,
     fig.savefig(name, dpi=300,)
 
 
-def compareMethods(QMExact,
+def compareMethods(data,
+                   QMExact,
                    ParametricQQ,
                    binning,
                    title,
                    name):
     ''' compare methods  '''
+    dataColour = 'black'
     ExactColour = 'skyblue'
     QQColour = 'crimson'
     fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=binning,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
+
     # Exact QM
     ax.hist(QMExact,
             bins=binning,

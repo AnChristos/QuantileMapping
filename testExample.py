@@ -49,8 +49,9 @@ def testExample():
     binning = np.linspace(minhist, maxhist, histBins)
     cdfbinning = np.linspace(minhist, maxhist, cdfBins)
 
-    compareMethods(exactQMCorr,
-                   nonParamQMCorr,
+    compareMethods(data=data,
+                   QMExact=exactQMCorr,
+                   ParametricQQ=nonParamQMCorr,
                    binning=binning,
                    title="Compare corrections",
                    name="CorrectionCompare.png")
