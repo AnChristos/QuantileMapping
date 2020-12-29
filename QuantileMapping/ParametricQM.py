@@ -2,7 +2,7 @@ def parametricQM(input,
                  correction,
                  simulation):
     '''
-    Applies  PPF_cor(CDF(input))
+    Applies  correction.ppf(simulation.cdf(input))
     Inputs
       - input to be corrected
       - correction object providing a ppf method

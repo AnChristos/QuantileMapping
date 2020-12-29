@@ -14,13 +14,17 @@ def testKS():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 20000
+    NumData = 30000
     NumSimul = 60000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
-
+    print('----->')
+    print('KS of training data', scipy.stats.kstest(data, trueModel.cdf))
+    print('KS of exact QM on training simul', scipy.stats.kstest(
+        parametricQM(simul, trueModel, distortedModel),
+        trueModel.cdf))
     # Do non-parametric QM correction
     LowPercentile = 0
     HighPercentile = 100
@@ -31,8 +35,11 @@ def testKS():
                                           simul,
                                           targetPerc=perc)
 
+    print('KS of parametric qq QM on training', scipy.stats.kstest(
+        QMnonParam.nominal(simul),
+        trueModel.cdf))
     numForTest = 1000
-    numExp = 10000
+    numExp = 1000
     KSpvalData = np.zeros(numExp)
     KSpvalExact = np.zeros(numExp)
     KSpvalQQ = np.zeros(numExp)

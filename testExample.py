@@ -18,7 +18,7 @@ def testExample():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 20000
+    NumData = 30000
     NumSimul = 60000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
