@@ -41,9 +41,9 @@ class fitNonParametricQMSpline:
         'data' : Data only assumes a high statistics simul to be
          adjusted using limited data.
         'none' : No bootstrap, no uncertainties
-         default ('both')
+         default ('data')
 
-        - numBootstrap : Number of bootstrap samples (default 1000)
+        - numBootstrap : Number of bootstrap samples (default 2000)
 
         - percInterpolation: interpolation option when calculating percentiles
 
@@ -87,8 +87,8 @@ class fitNonParametricQMSpline:
                  data,
                  simul,
                  targetPerc,
-                 bootstrapMode='data',
-                 numBootstrap=1000,
+                 bootstrapMode='both',
+                 numBootstrap=2000,
                  percInterpolation='linear',
                  smoothDegree=3,
                  Ext=0

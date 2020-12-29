@@ -29,8 +29,7 @@ def testKS():
         LowPercentile, HighPercentile, numBins)
     QMnonParam = fitNonParametricQMSpline(data,
                                           simul,
-                                          targetPerc=perc,
-                                          bootstrapMode='both')
+                                          targetPerc=perc)
 
     numForTest = 1000
     numExp = 10000

@@ -36,8 +36,7 @@ def testExample():
         LowPercentile, HighPercentile, numBins)
     QMnonParam = fitNonParametricQMSpline(data,
                                           simul,
-                                          targetPerc=perc,
-                                          bootstrapMode='both')
+                                          targetPerc=perc)
 
     nonParamQMCorr = QMnonParam.nominal(simul)
 
