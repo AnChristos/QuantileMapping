@@ -5,7 +5,7 @@ from QuantileMapping.NonParametricQMSpline import (
 from QuantileMapping.ParametricQM import (
     parametricQM)
 from CommonPlottingHelper import (
-    compareHist, compareCDF)
+    compareHist, compareCDF, compareMethods)
 
 
 def testExample():
@@ -18,8 +18,8 @@ def testExample():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 30000
-    NumSimul = 60000
+    NumData = 20000
+    NumSimul = 40000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -48,6 +48,13 @@ def testExample():
     cdfBins = 100
     binning = np.linspace(minhist, maxhist, histBins)
     cdfbinning = np.linspace(minhist, maxhist, cdfBins)
+
+    compareMethods(exactQMCorr,
+                   nonParamQMCorr,
+                   binning=binning,
+                   title="Compare corrections",
+                   name="CorrectionCompare.png")
+
     compareHist(data=data,
                 simul=simul,
                 corrected=exactQMCorr,

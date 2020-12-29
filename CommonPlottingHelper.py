@@ -48,7 +48,7 @@ def compareHist(data,
                 linewidth=1,
                 label='True Model')
 
-    ax.legend(loc='center right')
+    ax.legend(loc='best')
     ax.set(xlabel='x', ylabel='pdf(x)')
     ax.set_title(title)
 
@@ -100,8 +100,40 @@ def compareCDF(data,
                 linewidth=1,
                 label='True Model')
 
-    ax.legend(loc='upper left')
+    ax.legend(loc='best')
     ax.set(xlabel='Input value', ylabel='%')
     ax.set_title(title)
 
     fig.savefig(name, dpi=300,)
+
+
+def compareMethods(QMExact,
+                   ParametricQQ,
+                   binning,
+                   title,
+                   name):
+    ''' compare methods  '''
+    ExactColour = 'skyblue'
+    QQColour = 'crimson'
+    fig, ax = plt.subplots()
+    # Exact QM
+    ax.hist(QMExact,
+            bins=binning,
+            color=ExactColour,
+            density=True,
+            histtype='step',
+            label='Exact QM')
+
+    # Non parametric QQ
+    ax.hist(ParametricQQ,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=QQColour,
+            label='Non parametric qq')
+
+    ax.legend(loc='best')
+    ax.set(xlabel='x', ylabel='pdf(x)')
+    ax.set_title(title)
+
+    fig.savefig(name, dpi=300)
