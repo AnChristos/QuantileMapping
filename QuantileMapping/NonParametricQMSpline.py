@@ -48,10 +48,10 @@ class fitNonParametricQMSpline:
         - percInterpolation: interpolation option when calculating percentiles
 
         - smoothDegree : smoothDegree passed to
-        scipy.interpolate.UnivariateSpline
+        scipy.interpolate.InterpolatedUnivariateSpline
 
         - Ext : Extrapolation option passed to
-        scipy.interpolate.UnivariateSpline
+        scipy.interpolate.InterpolatedUnivariateSpline
 
       Notes:
       The grid of uncorrected values input,
@@ -60,7 +60,7 @@ class fitNonParametricQMSpline:
 
       If bootstrapMode ='none' then
       correction = percentiles(data, target percentages)
-      g =  UnivariateSpline( input, correction)
+      g =  InterpolatedUnivariateSpline( input, correction)
       and there are no uncertainties
       (the relevant methods return the same as the nominal)
 
@@ -70,13 +70,13 @@ class fitNonParametricQMSpline:
       Both data and simulation are resampled and a
       a correction^tilda for each value of the input
       is calculated via:
-      g_resample = UnivariateSpline(simul_resample,data_resample )
+      g_resample = InterpolatedUnivariateSpline(simul_resample,data_resample )
       correction^tilda = g_resample(input).
       The correction^tilda from all data/MC bootstraps
       are used to derive the interval of correction^hat.
       The return values are:
-      g_up = UnivariateSpline(input,correction^hat up)
-      g_down = UnivariateSpline(input,correction^hat down)
+      g_up = InterpolatedUnivariateSpline(input,correction^hat up)
+      g_down = InterpolatedUnivariateSpline(input,correction^hat down)
       g_nominal = (g_up + g_down) * 0.5
 
       If bootstrapMode ='data' then the data are resampled
@@ -86,8 +86,8 @@ class fitNonParametricQMSpline:
       The correction^tilda from all data bootstraps
       are used to derive the interval of correction^hat.
       The return values are:
-      g_up = UnivariateSpline(input,correction^hat up)
-      g_down = UnivariateSpline(input,correction^hat down)
+      g_up = InterpolatedUnivariateSpline(input,correction^hat up)
+      g_down = InterpolatedUnivariateSpline(input,correction^hat down)
       g_nominal = (g_up + g_down) * 0.5
     '''
 
@@ -110,10 +110,6 @@ class fitNonParametricQMSpline:
         numPercentiles = targetPerc.size
         self._up = np.zeros(numPercentiles)
         self._down = np.zeros(numPercentiles)
-        # Check if we do bootstrap (default is true)
-        self._hasBootstrap = (True
-                              if numBootstrap > 0
-                              else False)
 
         if bootstrapMode == 'both':
             self._bootstrapBoth(data,
@@ -140,7 +136,6 @@ class fitNonParametricQMSpline:
                                 percInterpolation,
                                 smoothDegree,
                                 Ext)
-
         else:
             raise Exception("unexpected bootstrapMode ", bootstrapMode)
 
@@ -157,42 +152,47 @@ class fitNonParametricQMSpline:
         Helper method for running with bootstrap on both
         data and simulation
         '''
-        # Array to keep track of the bootstraps
-        # As many rows as numBootstrap
-        # as many colums as x inputs we want the y outputs / percentiles
+        # Array to keep track of the bootstrapss
         bootstrapResults = np.zeros(shape=(numBootstrap, numPercentiles))
-        # calculate random noise to add
-        effSigmaData = min(np.std(data), scipy.stats.iqr(
+        # Prepare for smooth bootstrap with normal Kernel
+        normal = scipy.stats.norm()
+        lenData = len(data)
+        meanData = np.mean(data)
+        varData = np.var(data)
+        effSigmaData = min(math.sqrt(varData), scipy.stats.iqr(
             data)/1.34)
-        dataNoise = 0.9 * effSigmaData * math.pow(data.size, -0.2)
-        effSigmaSim = min(np.std(simul), scipy.stats.iqr(
+        hdata = 0.9 * effSigmaData * math.pow(lenData, -0.2)
+        shrinkData = math.sqrt(1 + (hdata*hdata) * 1./varData)
+        lenSimul = len(simul)
+        meanSimul = np.mean(simul)
+        varSimul = np.var(simul)
+        effSigmaSim = min(math.sqrt(varSimul), scipy.stats.iqr(
             simul)/1.34)
-        simNoise = 0.9 * effSigmaSim * math.pow(simul.size, -0.2)
-        # create bootstraps and repeat the mapping procedure
+        hsimul = 0.9 * effSigmaSim * math.pow(lenSimul, -0.2)
+        shrinkSimul = math.sqrt(1 + (hsimul*hsimul) * 1./varSimul)
+
+        # create bootstraps
         for i in range(numBootstrap):
             # resample the inputs with replacement with random noise
-            randomNoiseData = np.random.normal(
-                0, dataNoise, size=data.size)
-            randomNoiseSimul = np.random.normal(
-                0, simNoise, size=simul.size)
-            dataRepl = np.random.choice(
-                data, len(data), replace=True)+randomNoiseData
-            simulRepl = np.random.choice(
-                simul, len(simul), replace=True)+randomNoiseSimul
+            epsData = normal.rvs(size=data.size)
+            iData = np.random.choice(data, lenData, replace=True)
+            iData = meanData + (iData - meanData + hdata*epsData)/shrinkData
+
+            epsSimul = normal.rvs(size=simul.size)
+            iSimul = np.random.choice(simul, lenSimul, replace=True)
+            iSimul = meanSimul + (iSimul - meanSimul +
+                                  hsimul*epsSimul)/shrinkSimul
             # create a mapping from the resamples
-            percentileSim = np.percentile(
-                simulRepl, q=targetPerc, interpolation=percInterpolation)
             percentileData = np.percentile(
-                dataRepl, q=targetPerc, interpolation=percInterpolation)
-            correctionRepl = scipy.interpolate.UnivariateSpline(
+                iData, q=targetPerc, interpolation=percInterpolation)
+            percentileSim = np.percentile(
+                iSimul, q=targetPerc, interpolation=percInterpolation)
+            correctionRepl = scipy.interpolate.InterpolatedUnivariateSpline(
                 percentileSim, percentileData, k=smoothDegree, ext=Ext)
-            # call the resampled mapping for the same
-            # simulation percentiles
-            # used in the nominal to get new y values for them
+            # call the resample mapping
             bootstrapResults[i] = correctionRepl(self._uncorrected)
 
-        # Calculate correction_down, correction_up
-        # The nominal value is in the middle of this interval
+        # Calculate up, down , nominal
         quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
             down, up = np.percentile(bootstrapResults[:, i], q=quant)
@@ -200,9 +200,9 @@ class fitNonParametricQMSpline:
             self._up[i] = up
 
         # Create interpolated g(x_input)
-        self._upInterp = scipy.interpolate.UnivariateSpline(
+        self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
-        self._downInterp = scipy.interpolate.UnivariateSpline(
+        self._downInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._down, k=smoothDegree, ext=Ext)
 
     def _bootstrapData(self,
@@ -217,26 +217,27 @@ class fitNonParametricQMSpline:
         '''
         Helper method for running with bootstrap on data
         '''
-        # Array to keep track of the bootstraps
-        # As many rows as numBootstrap
-        # as many colums as x inputs we want the y outputs / percentiles
+        # Array to keep track of the bootstrapss
         bootstrapResults = np.zeros(shape=(numBootstrap, numPercentiles))
-        # calculate random noise to add
-        effSigmaData = min(np.std(data), scipy.stats.iqr(
+        # Prepare for smooth bootstrap with normal Kernel
+        normal = scipy.stats.norm()
+        lenData = len(data)
+        meanData = np.mean(data)
+        varData = np.var(data)
+        effSigmaData = min(math.sqrt(varData), scipy.stats.iqr(
             data)/1.34)
-        dataNoise = 0.9 * effSigmaData * math.pow(data.size, -0.2)
-        # create bootstraps and repeat the mapping procedure
+        hdata = 0.9 * effSigmaData * math.pow(lenData, -0.2)
+        shrinkData = math.sqrt(1 + (hdata*hdata) * 1./varData)
+        # create bootstraps
         for i in range(numBootstrap):
             # resample the inputs with replacement with random noise
-            randomNoiseData = np.random.normal(
-                0, dataNoise, size=data.size)
-            dataRepl = np.random.choice(
-                data, len(data), replace=True)+randomNoiseData
+            epsData = normal.rvs(size=data.size)
+            iData = np.random.choice(data, lenData, replace=True)
+            iData = meanData + (iData - meanData + hdata*epsData)/shrinkData
             bootstrapResults[i] = np.percentile(
-                dataRepl, q=targetPerc, interpolation=percInterpolation)
+                iData, q=targetPerc, interpolation=percInterpolation)
 
-        # Calculate correction_down, correction_up
-        # The nominal value is in the middle of this interval
+        # down,nominal,up
         quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
             down, up = np.percentile(bootstrapResults[:, i], q=quant)
@@ -244,9 +245,9 @@ class fitNonParametricQMSpline:
             self._up[i] = up
 
         # Create interpolated g(x_input)
-        self._upInterp = scipy.interpolate.UnivariateSpline(
+        self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
-        self._downInterp = scipy.interpolate.UnivariateSpline(
+        self._downInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._down, k=smoothDegree, ext=Ext)
 
     def _bootstrapNone(self, data,
@@ -259,7 +260,7 @@ class fitNonParametricQMSpline:
             interpolation=percInterpolation)
         self._down = self._up
         # Create interpolated g(x_input)
-        self._upInterp = scipy.interpolate.UnivariateSpline(
+        self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
         self._downInterp = self._upInterp
 

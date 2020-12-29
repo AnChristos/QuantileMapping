@@ -37,7 +37,7 @@ def testExample():
     QMnonParam = fitNonParametricQMSpline(data,
                                           simul,
                                           targetPerc=perc,
-                                          bootstrapMode='both')
+                                          bootstrapMode='data')
 
     nonParamQMCorr = QMnonParam.nominal(simul)
 
