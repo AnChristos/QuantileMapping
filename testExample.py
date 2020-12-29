@@ -14,12 +14,12 @@ def testExample():
 
     Apply:
      - exact parametric QM since we know the exact true model
-     - non parametric QM pretending we do know the true model
+     - non parametric QM pretending we do not know the true model
     '''
     shift = 0.5
     smear = 1.2
     NumData = 20000
-    NumSimul = 40000
+    NumSimul = 60000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -29,15 +29,15 @@ def testExample():
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 
     # Do non-parametric QM correction
-    LowPercentile = 0.0
-    HighPercentile = 100
+    LowPercentile = 0.
+    HighPercentile = 100.
     numBins = 1000
     perc = np.linspace(
         LowPercentile, HighPercentile, numBins)
     QMnonParam = fitNonParametricQMSpline(data,
                                           simul,
                                           targetPerc=perc,
-                                          bootstrapMode='data')
+                                          bootstrapMode='both')
 
     nonParamQMCorr = QMnonParam.nominal(simul)
 

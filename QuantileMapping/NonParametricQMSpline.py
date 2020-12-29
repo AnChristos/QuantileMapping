@@ -41,7 +41,7 @@ class fitNonParametricQMSpline:
         'data' : Data only assumes a high statistics simul to be
          adjusted using limited data.
         'none' : No bootstrap, no uncertainties
-         default ('data')
+         default ('both')
 
         - numBootstrap : Number of bootstrap samples (default 1000)
 
@@ -60,7 +60,6 @@ class fitNonParametricQMSpline:
 
       If bootstrapMode ='none' then
       correction = percentiles(data, target percentages)
-      g =  InterpolatedUnivariateSpline( input, correction)
       and there are no uncertainties
       (the relevant methods return the same as the nominal)
 
@@ -74,21 +73,14 @@ class fitNonParametricQMSpline:
       correction^tilda = g_resample(input).
       The correction^tilda from all data/MC bootstraps
       are used to derive the interval of correction^hat.
-      The return values are:
-      g_up = InterpolatedUnivariateSpline(input,correction^hat up)
-      g_down = InterpolatedUnivariateSpline(input,correction^hat down)
-      g_nominal = (g_up + g_down) * 0.5
+
 
       If bootstrapMode ='data' then the data are resampled
       and
       correction^tilda = percentiles(data_resample, target percentages)
       is calcualated.
       The correction^tilda from all data bootstraps
-      are used to derive the interval of correction^hat.
-      The return values are:
-      g_up = InterpolatedUnivariateSpline(input,correction^hat up)
-      g_down = InterpolatedUnivariateSpline(input,correction^hat down)
-      g_nominal = (g_up + g_down) * 0.5
+      are used to derive the interval of correction^hat.5
     '''
 
     def __init__(self,
@@ -108,6 +100,7 @@ class fitNonParametricQMSpline:
             interpolation=percInterpolation)
         # Initialize  outputs to 0
         numPercentiles = targetPerc.size
+        self._nominal = np.zeros(numPercentiles)
         self._up = np.zeros(numPercentiles)
         self._down = np.zeros(numPercentiles)
 
@@ -196,10 +189,13 @@ class fitNonParametricQMSpline:
         quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
             down, up = np.percentile(bootstrapResults[:, i], q=quant)
+            self._nominal[i] = 0.5*(down+up)
             self._down[i] = down
             self._up[i] = up
 
         # Create interpolated g(x_input)
+        self._nomInterp = scipy.interpolate.InterpolatedUnivariateSpline(
+            self._uncorrected, self._nominal, k=smoothDegree, ext=Ext)
         self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
         self._downInterp = scipy.interpolate.InterpolatedUnivariateSpline(
@@ -241,10 +237,13 @@ class fitNonParametricQMSpline:
         quant = np.array([2.5, 97.5])
         for i in range(numPercentiles):
             down, up = np.percentile(bootstrapResults[:, i], q=quant)
+            self._nominal[i] = 0.5*(down+up)
             self._down[i] = down
             self._up[i] = up
 
         # Create interpolated g(x_input)
+        self._nomInterp = scipy.interpolate.InterpolatedUnivariateSpline(
+            self._uncorrected, self._nominal, k=smoothDegree, ext=Ext)
         self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
         self._downInterp = scipy.interpolate.InterpolatedUnivariateSpline(
@@ -255,14 +254,16 @@ class fitNonParametricQMSpline:
                        percInterpolation,
                        smoothDegree, Ext):
         ''' Helper method when no bootstrap is used up=nominal=down'''
-        self._up = np.percentile(
+        self._nominal = np.percentile(
             data, q=targetPerc,
             interpolation=percInterpolation)
-        self._down = self._up
+        self._up = self._nominal
+        self._down = self._nominal
         # Create interpolated g(x_input)
-        self._upInterp = scipy.interpolate.InterpolatedUnivariateSpline(
+        self._nomInterp = scipy.interpolate.InterpolatedUnivariateSpline(
             self._uncorrected, self._up, k=smoothDegree, ext=Ext)
-        self._downInterp = self._upInterp
+        self._downInterp = self._nomInterp
+        self._upInterp = self._nomInterp
 
     def uncorrected(self):
         ''' Return x_input uncorrected values a x_corr was estimated.'''
@@ -270,7 +271,7 @@ class fitNonParametricQMSpline:
 
     def corrected(self):
         ''' Return the estimated x_corr .'''
-        return (self._up+self._down)*0.5
+        return self._nominal
 
     def correctedUp(self):
         ''' Return the estimated x_corr + up uncertainty.'''
@@ -284,7 +285,7 @@ class fitNonParametricQMSpline:
         ''' return corrected values for the x input using the nominal
         correction. approximating g with a univariate spline
         '''
-        return (self._upInterp(x)+self._downInterp(x))*0.5
+        return self._nomInterp(x)
 
     def up(self, x):
         ''' return corrected values for the x input using the up
@@ -305,6 +306,6 @@ class fitNonParametricQMSpline:
             variations.
         '''
         result = np.column_stack((
-            self._uncorrected, (self._down+self._up)*0.5,
+            self._uncorrected, self._nominal,
             self._down, self._up))
         np.savetxt(name, result)
