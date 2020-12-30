@@ -150,38 +150,28 @@ def compareMethods(data,
     fig.savefig(name, dpi=300)
 
 
-def compareCorrection(simul,
+def compareCorrection(points,
                       QMExact,
                       NonParametricQQ,
-                      NonParametricQQDown,
-                      NonParametricQQUp,
                       title,
                       name):
     ExactColour = 'skyblue'
     QQColour = 'crimson'
 
-    sortedSimul = np.sort(simul)
+    sortedpoints = np.sort(points)
     sortedExact = np.sort(QMExact)
     sortedQQ = np.sort(NonParametricQQ)
-    sortedQQUp = np.sort(NonParametricQQUp)
-    sortedQQDown = np.sort(NonParametricQQDown)
     fig, ax = plt.subplots()
-    ax.plot(sortedSimul,
-            sortedExact,
-            color=ExactColour,
-            label='Exact QM')
-    ax.plot(sortedSimul,
-            sortedQQ,
-            color=QQColour,
-            label='Non parametric qq')
-    ax.plot(sortedSimul,
-            sortedQQUp,
-            color='grey',
-            label='uncertainty')
-    ax.plot(sortedSimul,
-            sortedQQDown,
-            color='grey',
-            label='uncertainty')
+    ax.scatter(sortedpoints,
+               sortedExact,
+               marker='.',
+               color=ExactColour,
+               label='Exact QM')
+    ax.scatter(sortedpoints,
+               sortedQQ,
+               marker='.',
+               color=QQColour,
+               label='Non parametric qq')
     ax.legend(loc='best')
     ax.set(xlabel='input ', ylabel='corrected input')
     ax.set_title(title)

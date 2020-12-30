@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.stats
+import scipy.interpolate
 from QuantileMapping.NonParametricQMSpline import (
     fitNonParametricQMSpline)
 from QuantileMapping.ParametricQM import (
@@ -18,8 +19,8 @@ def testExample():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 20000
-    NumSimul = 60000
+    NumData = 40000
+    NumSimul = 120000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -29,19 +30,31 @@ def testExample():
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 
     # Do non-parametric QM correction
-    LowPercentile = 0
-    HighPercentile = 100
+    LowPercentile = 0.1
+    HighPercentile = 99.9
     numBins = 1000
     perc = np.linspace(
         LowPercentile, HighPercentile, numBins)
-    QMnonParam = fitNonParametricQMSpline(data,
-                                          simul,
-                                          targetPerc=perc)
+    QMqq = fitNonParametricQMSpline(data,
+                                    simul,
+                                    targetPerc=perc,
+                                    numBootstrap=2000)
 
-    nonParamQMCorr = QMnonParam.nominal(simul)
-    nonParamQMCorrUp = QMnonParam.up(simul)
-    nonParamQMCorrDown = QMnonParam.down(simul)
+    # Compare the corrections derived into certain points
+    compareCorrection(points=QMqq.uncorrected,
+                      QMExact=parametricQM(
+                          QMqq.uncorrected, trueModel, distortedModel),
+                      NonParametricQQ=QMqq.nominal,
+                      title="Compare corrections",
+                      name="CorrectionCompare.png")
 
+    # interpolate the qq correction not
+    interQMCorr = scipy.interpolate.interp1d(
+        QMqq.uncorrected,
+        QMqq.nominal,
+        fill_value='extrapolate',
+        assume_sorted=True)
+    nonParamQMCorr = interQMCorr(simul)
     # pdf histograms
     # window for histograms
     minhist = -5
@@ -50,14 +63,6 @@ def testExample():
     cdfBins = 100
     binning = np.linspace(minhist, maxhist, histBins)
     cdfbinning = np.linspace(minhist, maxhist, cdfBins)
-
-    compareCorrection(simul=simul,
-                      QMExact=exactQMCorr,
-                      NonParametricQQ=nonParamQMCorr,
-                      NonParametricQQDown=nonParamQMCorrDown,
-                      NonParametricQQUp=nonParamQMCorrUp,
-                      title="Compare corrections",
-                      name="CorrectionCompare.png")
 
     compareMethods(data=data,
                    simul=simul,
