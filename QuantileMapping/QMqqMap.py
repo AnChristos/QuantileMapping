@@ -4,12 +4,12 @@ import numpy as np
 class QMqqMap:
     '''
       Create a q-q map
-      percentiles(simul,target percentage)
-      percentiles(data,target percentage)
+      X = percentiles(simul,target percentage)
+      Y= percentiles(data,target percentage)
 
-      Each value returned by uncorrected[i]
+      Each value returned by X[i]
       is mapped to the values returned by
-      nominal[i]
+      Y[i]
 
       Inputs :
         data : data input array
@@ -18,39 +18,36 @@ class QMqqMap:
 
         numPoint = 500: Number of points in the q-q map
 
-        startPerc = 0.01 : 1st point will be
+        startPerc = 0.0 : 1st point will be
         (startPerc(simul),startPerc(data) )
 
-        endPerc = 99.9 : last point will be
+        endPerc = 100 : last point will be
         (endPerc(simul),endPerc(data) )
 
-        numBootstrap : Number of bootstrap samples
-        if <=1 no bootstrap (default 2000) for the
-        data percentiles
+        numBootstrap = 2000 : Number of bootstrap samples
+        if <=1 no bootstrap.
 
         percInterpolation: interpolation option when calculating percentiles
 
       Notes:
-      The grid of uncorrected values input,
-      for which  a correction is estimated, is defined by
-      input = percentiles(simul,target percentages)
+      X = percentiles(simul,target percentages)
 
       If numBootstrap <=1
-      correction = percentiles(data, target percentages)
+      Y = percentiles(data, target percentages)
 
       If  numBootstrap >1 then the data are resampled
       and
-      correction^tilda = percentiles(data_resample, target percentages)
+      Y^tilda = percentiles(data_resample, target percentages)
       is calcualated.
-      The correction^tilda from all data bootstraps
-      are used to derive the 95% interval for correction^hat.
+      The Y^tilda from all data bootstraps
+      are used to derive the 95% interval for Y.
     '''
 
     def __init__(
         self,
         data,
         simul,
-        numPoints=400,
+        numPoints=500,
         startPerc=0.0,
         endPerc=100,
         bootstrapMode='data',
