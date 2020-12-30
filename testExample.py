@@ -1,8 +1,8 @@
 import numpy as np
 import scipy.stats
 import scipy.interpolate
-from QuantileMapping.NonParametricQMSpline import (
-    fitNonParametricQMSpline)
+from QuantileMapping.QMqqMap import (
+    QMqqMap)
 from QuantileMapping.ParametricQM import (
     parametricQM)
 from CommonPlottingHelper import (
@@ -17,9 +17,9 @@ def testExample():
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do not know the true model
     '''
-    shift = 0.5
-    smear = 1.2
-    NumData = 40000
+    shift = 0.1
+    smear = 1.1
+    NumData = 20000
     NumSimul = 120000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
@@ -30,28 +30,25 @@ def testExample():
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 
     # Do non-parametric QM correction
-    LowPercentile = 0.1
-    HighPercentile = 99.9
-    numBins = 1000
-    perc = np.linspace(
-        LowPercentile, HighPercentile, numBins)
-    QMqq = fitNonParametricQMSpline(data,
-                                    simul,
-                                    targetPerc=perc,
-                                    numBootstrap=2000)
+    QMqq = QMqqMap(
+        data,
+        simul,
+        numBootstrap=2000)
 
     # Compare the corrections derived into certain points
-    compareCorrection(points=QMqq.uncorrected,
-                      QMExact=parametricQM(
-                          QMqq.uncorrected, trueModel, distortedModel),
-                      NonParametricQQ=QMqq.nominal,
-                      title="Compare corrections",
-                      name="CorrectionCompare.png")
+    compareCorrection(
+        points=QMqq.X,
+        QMExact=parametricQM(
+            QMqq.X, trueModel, distortedModel),
+        NonParametric=QMqq.Y,
+        NonParametricUnc=(QMqq.Yup-QMqq.Y),
+        title="Compare corrections",
+        name="CorrectionCompare.png")
 
     # interpolate the qq correction not
     interQMCorr = scipy.interpolate.interp1d(
-        QMqq.uncorrected,
-        QMqq.nominal,
+        QMqq.X,
+        QMqq.Y,
         fill_value='extrapolate',
         assume_sorted=True)
     nonParamQMCorr = interQMCorr(simul)
@@ -67,7 +64,7 @@ def testExample():
     compareMethods(data=data,
                    simul=simul,
                    QMExact=exactQMCorr,
-                   NonParametricQQ=nonParamQMCorr,
+                   NonParametric=nonParamQMCorr,
                    binning=binning,
                    title="Compare Methods",
                    name="MethodCompare.png")

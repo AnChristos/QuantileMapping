@@ -3,7 +3,7 @@ import numpy as np
 
 class QMqqMap:
     '''
-      Create a q-q map   
+      Create a q-q map
       percentiles(simul,target percentage)
       percentiles(data,target percentage)
 
@@ -16,12 +16,17 @@ class QMqqMap:
 
         simul : simulation input array.
 
-        targetPerc : sequence of target percentage to compute
-        percentiles for during the mapping
-        (array with shorted numbers in the range 0,100)
+        numPoint = 500: Number of points in the q-q map
+
+        startPerc = 0.01 : 1st point will be
+        (startPerc(simul),startPerc(data) )
+
+        endPerc = 99.9 : last point will be
+        (endPerc(simul),endPerc(data) )
 
         numBootstrap : Number of bootstrap samples
-        if <=1 no bootstrap (default 2000)
+        if <=1 no bootstrap (default 2000) for the
+        data percentiles
 
         percInterpolation: interpolation option when calculating percentiles
 
@@ -45,21 +50,23 @@ class QMqqMap:
         self,
         data,
         simul,
-        targetPerc,
+        numPoints=400,
+        startPerc=0.0,
+        endPerc=100,
         bootstrapMode='data',
         numBootstrap=2000,
         percInterpolation='linear'
     ):
-
+        targetPerc = np.linspace(
+            startPerc, endPerc, numPoints)
+        numPercentiles = len(targetPerc)
         # The percentiles we will use as x values.
-        self.uncorrected = np.percentile(
+        self.X = np.percentile(
             simul, q=targetPerc,
             interpolation=percInterpolation)
-        # Initialize  outputs to 0
-        numPercentiles = targetPerc.size
-        self.nominal = np.zeros(numPercentiles)
-        self.up = np.zeros(numPercentiles)
-        self.down = np.zeros(numPercentiles)
+        self.Y = np.zeros(numPercentiles)
+        self.Yup = np.zeros(numPercentiles)
+        self.Ydown = np.zeros(numPercentiles)
 
         if numBootstrap > 1:
             self._bootstrapData(
@@ -106,9 +113,9 @@ class QMqqMap:
                 bootstrapResults[:, i],
                 q=quant,
                 interpolation=percInterpolation)
-            self.nominal[i] = 0.5 * (down+up)
-            self.down[i] = down
-            self.up[i] = up
+            self.Y[i] = 0.5 * (down+up)
+            self.Ydown[i] = down
+            self.Yup[i] = up
 
     def _bootstrapNone(
             self,
@@ -117,12 +124,12 @@ class QMqqMap:
             targetPerc,
             percInterpolation):
         ''' Helper method when no bootstrap is used up=nominal=down'''
-        self.nominal = np.percentile(
+        self.Y = np.percentile(
             data,
             q=targetPerc,
             interpolation=percInterpolation)
-        self.up = self.nominal
-        self.down = self.nominal
+        self.Yup = self.Y
+        self.Ydown = self.Y
 
     def savetxt(self, name):
         ''' save the result in a txt (csv) file
@@ -131,8 +138,8 @@ class QMqqMap:
             variations.
         '''
         result = np.column_stack((
-            self.uncorrected,
-            self.nominal,
-            self.down,
-            self.up))
+            self.X,
+            self.Y,
+            self.Ydown,
+            self.Yup))
         np.savetxt(name, result)

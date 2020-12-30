@@ -110,7 +110,7 @@ def compareCDF(data,
 def compareMethods(data,
                    simul,
                    QMExact,
-                   NonParametricQQ,
+                   NonParametric,
                    binning,
                    title,
                    name):
@@ -136,7 +136,7 @@ def compareMethods(data,
             label='Exact QM')
 
     # Non parametric QQ
-    ax.hist(NonParametricQQ,
+    ax.hist(NonParametric,
             bins=binning,
             density=True,
             histtype='step',
@@ -152,26 +152,28 @@ def compareMethods(data,
 
 def compareCorrection(points,
                       QMExact,
-                      NonParametricQQ,
+                      NonParametric,
+                      NonParametricUnc,
                       title,
                       name):
     ExactColour = 'skyblue'
     QQColour = 'crimson'
 
-    sortedpoints = np.sort(points)
-    sortedExact = np.sort(QMExact)
-    sortedQQ = np.sort(NonParametricQQ)
     fig, ax = plt.subplots()
-    ax.scatter(sortedpoints,
-               sortedExact,
+    ax.scatter(points,
+               QMExact,
                marker='.',
                color=ExactColour,
+               s=4,
                label='Exact QM')
-    ax.scatter(sortedpoints,
-               sortedQQ,
-               marker='.',
-               color=QQColour,
-               label='Non parametric qq')
+    ax.errorbar(x=points,
+                y=NonParametric,
+                yerr=NonParametricUnc,
+                marker='.',
+                ls='none',
+                markersize=2,
+                color=QQColour,
+                label='Estimated QM')
     ax.legend(loc='best')
     ax.set(xlabel='input ', ylabel='corrected input')
     ax.set_title(title)
