@@ -23,13 +23,13 @@ def testQoverP():
     # an effect so is shifted
     data = np.loadtxt("Data_eta0.4_0.8_pt30_45_psec5_CB.txt")
     simul = np.loadtxt("MC_eta0.4_0.8_pt30_45_psec5_CB.txt")
-    numPoints = 500
+    numPoints = 100
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
         data,
-        startPerc=0.5,
-        endPerc=99.5,
+        startPerc=1,
+        endPerc=99,
         numPoints=numPoints)
 
     QMqq.savetxt("qqPlot_qoverP.txt")
@@ -83,16 +83,15 @@ def testQoverP():
                 markersize=2,
                 color=lineColour,
                 label='q-q map points')
-
     ax.legend(loc='best')
     string1 = (
-        'slope = {:.4f} +- {:.4f}'
+        'slope = {:.5f} +- {:.5f}'
         .format(output.beta[0], output.sd_beta[0]))
     string2 = (
-        'intersept = {:.4f} +- {:.4f}'
+        'intersept = {:.5f} +- {:.5f}'
         .format(output.beta[1], output.sd_beta[1]))
-    ax.text(x=0, y=-1, s=string1)
-    ax.text(x=0, y=-1.2, s=string2)
+    ax.text(x=0.018, y=0.016, s=string1)
+    ax.text(x=0.018, y=0.015, s=string2)
     ax.set(xlabel='Input ', ylabel='Corrected input')
     ax.set_title('Fitted line on q-q map vs Perfect QM Correction')
     fig.savefig('qqMapFit_relSigmaQoverP.png', dpi=300)

@@ -68,8 +68,6 @@ def testExampleInterpolation():
     ax.set_title('Estimated vs Perfect QM Correction')
     fig.savefig('CorrectionCompare.png', dpi=300)
 
-    # Do pefect parametric correction
-    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
     # Use interpolation for  the qq correction
     interQMCorr = scipy.interpolate.interp1d(
         QMqq.X,
@@ -77,6 +75,9 @@ def testExampleInterpolation():
         fill_value='extrapolate',
         assume_sorted=True)
     nonParamQMCorr = interQMCorr(simul)
+    # Do pefect parametric correction
+    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
+
     # window for histograms
     sortedsimul = np.sort(simul)
     sorteddata = np.sort(data)
@@ -122,7 +123,7 @@ def testExampleInterpolation():
     ax.legend(loc='best')
     ax.set(xlabel='x', ylabel='pdf(x)')
     ax.set_title("Compare pdf ")
-    fig.savefig("comparePdf.png", dpi=300)
+    fig.savefig("comparePdfInterpolation.png", dpi=300)
 
     # cdf histograms
     fig, ax = plt.subplots()
@@ -162,7 +163,7 @@ def testExampleInterpolation():
     ax.legend(loc='upper left')
     ax.set(xlabel='x', ylabel='cdf(x)')
     ax.set_title("Compare CDF ")
-    fig.savefig("compareCDF.png", dpi=300)
+    fig.savefig("compareCDFInterpolation.png", dpi=300)
 
 
 if __name__ == "__main__":

@@ -54,23 +54,11 @@ def testExampleFit():
 
     # Fix colours for plotting
     exactColour = 'skyblue'
-    approxColour = 'red'
-    lineColour = 'red'
+    lineColour = 'black'
     approxColour = 'red'
     dataColour = 'black'
     exactColour = 'skyblue'
     simulColour = 'forestgreen'
-
-    # Compare estimated with exact QM
-    fig, ax = plt.subplots()
-    ax.plot(QMqq.X,
-            parametricQM(QMqq.X, trueModel, distortedModel),
-            color=exactColour,
-            label='Exact QM')
-    ax.legend(loc='best')
-    ax.set(xlabel='Input ', ylabel='Corrected input')
-    ax.set_title('Estimated vs Perfect QM Correction')
-    fig.savefig('CorrectionCompare.png', dpi=300)
 
     # Asymmetric Errors , Roger Barlow, PHYSTAT2003
     meanSigmaX = (Xplus + Xminus) * 0.5
@@ -129,13 +117,6 @@ def testExampleFit():
     nonParamQMCorr = f(output.beta, simul)
     # Do pefect parametric correction
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
-    # Use interpolation for  the qq correction
-    interQMCorr = scipy.interpolate.interp1d(
-        QMqq.X,
-        QMqq.Y,
-        fill_value='extrapolate',
-        assume_sorted=True)
-    nonParamQMCorr = interQMCorr(simul)
     # window for histograms
     sortedsimul = np.sort(simul)
     sorteddata = np.sort(data)
@@ -181,7 +162,7 @@ def testExampleFit():
     ax.legend(loc='best')
     ax.set(xlabel='x', ylabel='pdf(x)')
     ax.set_title("Compare pdf ")
-    fig.savefig("comparePdf.png", dpi=300)
+    fig.savefig("comparePdfFit.png", dpi=300)
 
     # cdf histograms
     fig, ax = plt.subplots()
@@ -222,7 +203,7 @@ def testExampleFit():
     ax.legend(loc='upper left')
     ax.set(xlabel='x', ylabel='cdf(x)')
     ax.set_title("Compare CDF ")
-    fig.savefig("compareCDF.png", dpi=300)
+    fig.savefig("compareCDFFit.png", dpi=300)
 
 
 if __name__ == "__main__":
