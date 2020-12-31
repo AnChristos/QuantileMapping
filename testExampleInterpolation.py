@@ -69,6 +69,9 @@ def testExampleInterpolation():
     fig.savefig('CorrectionCompare.png', dpi=300)
 
     # Use interpolation for  the qq correction
+    # This makes it follow the exact estimated
+    # values and performs extrapolation out of bounds.
+    # Look example using Fit or consider smoothing
     interQMCorr = scipy.interpolate.interp1d(
         QMqq.X,
         QMqq.Y,
