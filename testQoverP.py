@@ -1,7 +1,18 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.odr
 from QuantileMapping.QMqqMap import (
     QMqqMap)
+
+
+def f(B, x):
+    '''Linear function y = m*x + b'''
+    # B is a vector of the parameters.
+    # x is an array of the current x values.
+    # x is in the same format as the x passed to Data or RealData.
+    #
+    # Return an array in the same format as y passed to Data or RealData.
+    return B[0]*x + B[1]
 
 
 def testQoverP():
@@ -12,38 +23,116 @@ def testQoverP():
     # an effect so is shifted
     data = np.loadtxt("Data_eta0.4_0.8_pt30_45_psec5_CB.txt")
     simul = np.loadtxt("MC_eta0.4_0.8_pt30_45_psec5_CB.txt")
-
+    numPoints = 500
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
         data,
-        startPerc=0.1,
-        endPerc=99.9,
-        numPoints=500)
+        startPerc=0.5,
+        endPerc=99.5,
+        numPoints=numPoints)
+
     QMqq.savetxt("qqPlot_qoverP.txt")
-    lowerErrorX = QMqq.X - QMqq.Xlow
-    upperErrorX = QMqq.Xup - QMqq.X
-    ErrorX = np.row_stack((lowerErrorX, upperErrorX))
 
-    lowerErrorY = QMqq.Y - QMqq.Ylow
-    upperErrorY = QMqq.Yup - QMqq.Y
-    ErrorY = np.row_stack((lowerErrorY, upperErrorY))
+    Xminus = QMqq.X - QMqq.Xlow
+    Xplus = QMqq.Xup - QMqq.X
+    errorX = np.row_stack((Xminus, Xplus))
 
+    Yminus = QMqq.Y - QMqq.Ylow
+    Yplus = QMqq.Yup - QMqq.Y
+    errorY = np.row_stack((Yminus, Yplus))
+
+    # Asymmetric Errors , Roger Barlow, PHYSTAT2003
+    meanSigmaX = (Xplus + Xminus) * 0.5
+    diffSigmaX = (Xplus - Xminus) * 0.5
+    VX = meanSigmaX * meanSigmaX + 2 * diffSigmaX * diffSigmaX
+    meanSigmaY = (Yplus + Yminus) * 0.5
+    diffSigmaY = (Yplus - Yminus) * 0.5
+    VY = meanSigmaY * meanSigmaY + 2 * diffSigmaY * diffSigmaY
+
+    x1forguess = QMqq.X[int(numPoints*0.3)]
+    x2forguess = QMqq.X[int(numPoints*0.7)]
+    y1forguess = QMqq.Y[int(numPoints*0.3)]
+    y2forguess = QMqq.Y[int(numPoints*0.7)]
+    slopeguess = (y2forguess-y1forguess)/(x2forguess-x1forguess)
+    constguess = y2forguess - slopeguess * x2forguess
+    guess = np.array([slopeguess, constguess])
+
+    linear = scipy.odr.Model(f)
+    fitdata = scipy.odr.Data(QMqq.X, QMqq.Y, wd=1./VX, we=1./VY)
+    odr = scipy.odr.ODR(fitdata, linear, beta0=guess)
+    output = odr.run()
+    output.pprint()
+
+    approxColour = 'red'
+    lineColour = 'black'
+    approxColour = 'red'
+    dataColour = 'black'
+    simulColour = 'forestgreen'
     fig, ax = plt.subplots()
+    ax.plot(QMqq.X,
+            f(output.beta, QMqq.X),
+            color=approxColour,
+            label='Fit of  QM q-q map')
     ax.errorbar(x=QMqq.X,
                 y=QMqq.Y,
-                xerr=ErrorX,
-                yerr=ErrorY,
+                xerr=errorX,
+                yerr=errorY,
                 marker='.',
                 ls='none',
                 markersize=2,
-                color='crimson',
-                label='Estimated QM')
-    ax.legend(loc='best')
-    ax.set(xlabel='input ', ylabel='corrected input')
-    ax.set_title("RelativeqQ/P correcion")
+                color=lineColour,
+                label='q-q map points')
 
-    fig.savefig("RelativeQoverP.png", dpi=300)
+    ax.legend(loc='best')
+    string1 = (
+        'slope = {:.4f} +- {:.4f}'
+        .format(output.beta[0], output.sd_beta[0]))
+    string2 = (
+        'intersept = {:.4f} +- {:.4f}'
+        .format(output.beta[1], output.sd_beta[1]))
+    ax.text(x=0, y=-1, s=string1)
+    ax.text(x=0, y=-1.2, s=string2)
+    ax.set(xlabel='Input ', ylabel='Corrected input')
+    ax.set_title('Fitted line on q-q map vs Perfect QM Correction')
+    fig.savefig('qqMapFit_relSigmaQoverP.png', dpi=300)
+
+    # corrected simul
+    nonParamQMCorr = f(output.beta, simul)
+    # window for histograms
+    minhist = 0.012
+    maxhist = 0.025
+    histBins = 100
+    binning = np.linspace(minhist, maxhist, histBins)
+
+    # pdf histograms
+    fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=binning,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
+
+    # simulation
+    ax.hist(simul,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=simulColour,
+            label='simulation')
+    # QM qq fitted
+    ax.hist(nonParamQMCorr,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=approxColour,
+            label='Fitted  QM qq ')
+    ax.legend(loc='best')
+    ax.set(xlabel='x', ylabel='pdf(x)')
+    ax.set_title("Compare pdf ")
+    fig.savefig("comparePdf_relSigmaQoverP.png", dpi=300)
 
 
 if __name__ == "__main__":

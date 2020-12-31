@@ -78,8 +78,10 @@ def testExampleInterpolation():
         assume_sorted=True)
     nonParamQMCorr = interQMCorr(simul)
     # window for histograms
-    minhist = -5
-    maxhist = 5
+    sortedsimul = np.sort(simul)
+    sorteddata = np.sort(data)
+    minhist = min(sortedsimul[0], sorteddata[0])
+    maxhist = max(sortedsimul[-1], sorteddata[-1])
     histBins = 50
     cdfBins = 100
     binning = np.linspace(minhist, maxhist, histBins)
