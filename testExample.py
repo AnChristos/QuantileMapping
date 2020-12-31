@@ -16,10 +16,10 @@ def testExample():
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do not know the true model
     '''
-    shift = 0.5
-    smear = 1.5
-    NumData = 40000
-    NumSimul = 80000
+    shift = 0.2
+    smear = 1.0
+    NumData = 20000
+    NumSimul = 40000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -35,7 +35,7 @@ def testExample():
         startPerc=0.5,
         endPerc=99.5,
         numPoints=100)
-
+    QMqq.savetxt("qqPlot.txt")
     lowerErrorX = QMqq.X - QMqq.Xlow
     upperErrorX = QMqq.Xup - QMqq.X
     ErrorX = np.row_stack((lowerErrorX, upperErrorX))

@@ -61,11 +61,11 @@ class QMqqMap:
             sortx, q=targetPerc)
         self.Y = np.percentile(
             sorty, q=targetPerc)
-        self.Xup, self.Xlow = npCI(
+        self.Xlow, self.Xup = npCI(
             sortx,
             targetPerc/100.,
             assume_sorted=True)
-        self.Yup, self.Ylow = npCI(
+        self.Ylow, self.Yup = npCI(
             sorty,
             targetPerc/100.,
             assume_sorted=True)
@@ -73,12 +73,14 @@ class QMqqMap:
     def savetxt(self, name):
         ''' save the result in a txt (csv) file
             columns are
-            input , nominal , down , up
+            X , Y  , Xlow , Xup , Ylow , Yup
             variations.
         '''
         result = np.column_stack((
             self.X,
             self.Y,
-            self.Ydown,
+            self.Xlow,
+            self.Xup,
+            self.Ylow,
             self.Yup))
         np.savetxt(name, result)
