@@ -26,6 +26,9 @@ class QMqqMap:
 
         numPoint : Number of points in the q-q map
 
+        sigma = 1.96 : standarised gaussian quantile for uncertainties
+        i.e in in terms of normal sigma
+
         Note : Extreme quantile values might be inaccurate
     '''
 
@@ -35,7 +38,8 @@ class QMqqMap:
         y,
         startPerc,
         endPerc,
-        numPoints
+        numPoints,
+        sigma=1.96
     ):
         _percEps = 1./min(len(x), len(y))
         _startPerc = _percEps*100
@@ -64,10 +68,12 @@ class QMqqMap:
         self.Xlow, self.Xup = npCI(
             sortx,
             targetPerc/100.,
+            sigma=sigma,
             assume_sorted=True)
         self.Ylow, self.Yup = npCI(
             sorty,
             targetPerc/100.,
+            sigma=sigma,
             assume_sorted=True)
 
     def savetxt(self, name):

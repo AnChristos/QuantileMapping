@@ -1,12 +1,11 @@
 import numpy as np
 import scipy.stats
 import scipy.interpolate
+import matplotlib.pyplot as plt
 from QuantileMapping.QMqqMap import (
     QMqqMap)
 from QuantileMapping.ParametricQM import (
     parametricQM)
-from CommonPlottingHelper import (
-    compareHist, compareCDF, compareMethods, compareCorrection)
 
 
 def testExample():
@@ -16,8 +15,8 @@ def testExample():
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do not know the true model
     '''
-    shift = 0.2
-    smear = 1.0
+    shift = 0.5
+    smear = 1.2
     NumData = 20000
     NumSimul = 40000
     trueModel = scipy.stats.norm()
@@ -25,44 +24,59 @@ def testExample():
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
 
-    # Do pefect parametric correction
-    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
-
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
         data,
-        startPerc=0.5,
-        endPerc=99.5,
-        numPoints=100)
+        startPerc=1.,
+        endPerc=99.,
+        numPoints=100,
+        sigma=1.96)
+
     QMqq.savetxt("qqPlot.txt")
-    lowerErrorX = QMqq.X - QMqq.Xlow
-    upperErrorX = QMqq.Xup - QMqq.X
-    ErrorX = np.row_stack((lowerErrorX, upperErrorX))
+    Xminus = QMqq.X - QMqq.Xlow
+    Xplus = QMqq.Xup - QMqq.X
+    assymX = np.row_stack((Xminus, Xplus))
 
-    lowerErrorY = QMqq.Y - QMqq.Ylow
-    upperErrorY = QMqq.Yup - QMqq.Y
-    ErrorY = np.row_stack((lowerErrorY, upperErrorY))
+    Yminus = QMqq.Y - QMqq.Ylow
+    Yplus = QMqq.Yup - QMqq.Y
+    assymY = np.row_stack((Yminus, Yplus))
 
-    # Compare the corrections derived into certain points
-    compareCorrection(
-        points=QMqq.X,
-        QMExact=parametricQM(
-            QMqq.X, trueModel, distortedModel),
-        NonParametric=QMqq.Y,
-        NonParametricUncX=ErrorX,
-        NonParametricUncY=ErrorY,
-        title="Compare corrections",
-        name="CorrectionCompare.png")
+    # Fix colours for plotting
+    dataColour = 'black'
+    exactColour = 'skyblue'
+    approxColour = 'red'
+    simulColour = 'forestgreen'
 
-    # interpolate the qq correction not
+    # Compare estimated with exact QM
+    fig, ax = plt.subplots()
+    ax.errorbar(x=QMqq.X,
+                y=QMqq.Y,
+                xerr=assymX,
+                yerr=assymY,
+                marker='.',
+                ls='none',
+                markersize=2,
+                color=approxColour,
+                label='Estimated QM')
+    ax.plot(QMqq.X,
+            parametricQM(QMqq.X, trueModel, distortedModel),
+            color=exactColour,
+            label='Exact QM')
+    ax.legend(loc='best')
+    ax.set(xlabel='Input ', ylabel='Corrected input')
+    ax.set_title('Estimated vs Perfect QM Correction')
+    fig.savefig('CorrectionCompare.png', dpi=300)
+
+    # Do pefect parametric correction
+    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
+    # Use interpolation for  the qq correction
     interQMCorr = scipy.interpolate.interp1d(
         QMqq.X,
         QMqq.Y,
         fill_value='extrapolate',
         assume_sorted=True)
     nonParamQMCorr = interQMCorr(simul)
-    # pdf histograms
     # window for histograms
     minhist = -5
     maxhist = 5
@@ -71,45 +85,82 @@ def testExample():
     binning = np.linspace(minhist, maxhist, histBins)
     cdfbinning = np.linspace(minhist, maxhist, cdfBins)
 
-    compareMethods(data=data,
-                   simul=simul,
-                   QMExact=exactQMCorr,
-                   NonParametric=nonParamQMCorr,
-                   binning=binning,
-                   title="Compare Methods",
-                   name="MethodCompare.png")
+    # pdf histograms
+    fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=binning,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
 
-    compareHist(data=data,
-                simul=simul,
-                corrected=exactQMCorr,
-                trueModel=trueModel,
-                binning=binning,
-                title='Using "exact" Parametric QM',
-                name='ExactQMpdf.png')
+    # simulation
+    ax.hist(simul,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=simulColour,
+            label='simulation')
 
-    compareCDF(data=data,
-               simul=simul,
-               corrected=exactQMCorr,
-               trueModel=trueModel,
-               cdfbinning=cdfbinning,
-               title='Using "exact" Parametric QM',
-               name='ExactQMcdf.png')
+    # exact QM
+    ax.hist(exactQMCorr,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=exactColour,
+            label='Exact QM')
+    # QM qq interpolated
+    ax.hist(nonParamQMCorr,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=approxColour,
+            label='Interpolated  QM qq ')
+    ax.legend(loc='best')
+    ax.set(xlabel='x', ylabel='pdf(x)')
+    ax.set_title("Compare pdf ")
+    fig.savefig("comparePdf.png", dpi=300)
 
-    compareHist(data=data,
-                simul=simul,
-                corrected=nonParamQMCorr,
-                trueModel=trueModel,
-                binning=binning,
-                title='Non - Parametric QM',
-                name='NonParamQMpdf.png')
+    # cdf histograms
+    fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=cdfbinning,
+            cumulative=1,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
+    # simulation
+    ax.hist(simul,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=simulColour,
+            label='simulation')
 
-    compareCDF(data=data,
-               simul=simul,
-               corrected=nonParamQMCorr,
-               trueModel=trueModel,
-               cdfbinning=cdfbinning,
-               title='Non - Parametric QM',
-               name='NonParamQMcdf.png')
+    # exact QM
+    ax.hist(exactQMCorr,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=exactColour,
+            label='Exact QM')
+    # QM qq interpolated
+    ax.hist(nonParamQMCorr,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=approxColour,
+            label='Interpolated  QM qq ')
+    ax.legend(loc='upper left')
+    ax.set(xlabel='x', ylabel='cdf(x)')
+    ax.set_title("Compare CDF ")
+    fig.savefig("compareCDF.png", dpi=300)
 
 
 if __name__ == "__main__":
