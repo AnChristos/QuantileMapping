@@ -8,7 +8,7 @@ from QuantileMapping.ParametricQM import (
     parametricQM)
 
 
-def testExample():
+def testExampleInterpolation():
     '''
     Create a nominal and a distorted distribution
     Study :
@@ -17,7 +17,7 @@ def testExample():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 20000
+    NumData = 10000
     NumSimul = 40000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
@@ -36,11 +36,11 @@ def testExample():
     QMqq.savetxt("qqPlot.txt")
     Xminus = QMqq.X - QMqq.Xlow
     Xplus = QMqq.Xup - QMqq.X
-    assymX = np.row_stack((Xminus, Xplus))
+    errorX = np.row_stack((Xminus, Xplus))
 
     Yminus = QMqq.Y - QMqq.Ylow
     Yplus = QMqq.Yup - QMqq.Y
-    assymY = np.row_stack((Yminus, Yplus))
+    errorY = np.row_stack((Yminus, Yplus))
 
     # Fix colours for plotting
     dataColour = 'black'
@@ -52,8 +52,8 @@ def testExample():
     fig, ax = plt.subplots()
     ax.errorbar(x=QMqq.X,
                 y=QMqq.Y,
-                xerr=assymX,
-                yerr=assymY,
+                xerr=errorX,
+                yerr=errorY,
                 marker='.',
                 ls='none',
                 markersize=2,
@@ -164,4 +164,4 @@ def testExample():
 
 
 if __name__ == "__main__":
-    testExample()
+    testExampleInterpolation()
