@@ -1,132 +1,74 @@
 import numpy as np
+from QuantileMapping.QuantileHelper import npCI
 
 
 class QMqqMap:
     '''
       Create a q-q map
       X = percentiles(simul,target percentage)
-      Y= percentiles(data,target percentage)
+      Y =  percentiles(data,target percentage)
 
       Each value returned by X[i]
       is mapped to the values returned by
       Y[i]
-
-      Inputs :
-        data : data input array
-
-        simul : simulation input array.
-
-        numPoint = 500: Number of points in the q-q map
-
-        startPerc = 0.0 : 1st point will be
-        (startPerc(simul),startPerc(data) )
-
-        endPerc = 100 : last point will be
-        (endPerc(simul),endPerc(data) )
-
-        numBootstrap = 2000 : Number of bootstrap samples
-        if <=1 no bootstrap.
-
-        percInterpolation: interpolation option when calculating percentiles
-
-      Notes:
       X = percentiles(simul,target percentages)
-
-      If numBootstrap <=1
       Y = percentiles(data, target percentages)
+      Inputs :
+        y : input array to map to Y
 
-      If  numBootstrap >1 then the data are resampled
-      and
-      Y^tilda = percentiles(data_resample, target percentages)
-      is calcualated.
-      The Y^tilda from all data bootstraps
-      are used to derive the 95% interval for Y.
+        x : input array to map to X
+
+        startPerc  : 1st point in the map will be:
+        (startPerc(simul),startPerc(data) ).
+
+        endPerc : last point ine the map will be:
+        (endPerc(simul),endPerc(data) ).
+
+        numPoint : Number of points in the q-q map
+
+        Note : Extreme quantile values might be inaccurate
     '''
 
     def __init__(
         self,
-        data,
-        simul,
-        numPoints=500,
-        startPerc=0.0,
-        endPerc=100,
-        bootstrapMode='data',
-        numBootstrap=2000,
-        percInterpolation='linear'
+        x,
+        y,
+        startPerc,
+        endPerc,
+        numPoints
     ):
+        _percEps = 1./min(len(x), len(y))
+        _startPerc = _percEps*100
+        _endPerc = 100. - _startPerc
+        if(startPerc < _startPerc):
+            raise ValueError("start percentile target smaller"
+                             " than 1.0/max(len(x),len(y))")
+        else:
+            _startPerc = startPerc
+
+        if(endPerc > _endPerc):
+            raise ValueError("end percentile target larger"
+                             " than 1 - 1.0/min(len(x),len(y))")
+        else:
+            _endPerc = endPerc
+
         targetPerc = np.linspace(
-            startPerc, endPerc, numPoints)
-        numPercentiles = len(targetPerc)
+            _startPerc, _endPerc, numPoints)
+        sortx = np.sort(x)
+        sorty = np.sort(y)
         # The percentiles we will use as x values.
         self.X = np.percentile(
-            simul, q=targetPerc,
-            interpolation=percInterpolation)
-        self.Y = np.zeros(numPercentiles)
-        self.Yup = np.zeros(numPercentiles)
-        self.Ydown = np.zeros(numPercentiles)
-
-        if numBootstrap > 1:
-            self._bootstrapData(
-                data,
-                simul,
-                numBootstrap,
-                targetPerc,
-                numPercentiles,
-                percInterpolation)
-        else:
-            self._bootstrapNone(
-                data,
-                simul,
-                targetPerc,
-                percInterpolation)
-
-    def _bootstrapData(
-            self,
-            data,
-            simul,
-            numBootstrap,
-            targetPerc,
-            numPercentiles,
-            percInterpolation):
-        '''
-        Helper method for running with bootstrap on data
-        '''
-        # Array to keep track of the bootstrapss
-        bootstrapResults = np.zeros(shape=(numBootstrap, numPercentiles))
-        lenData = len(data)
-        # create bootstraps
-        for i in range(numBootstrap):
-            # resample the inputs with replacement with random noise
-            iData = np.random.choice(data, lenData, replace=True)
-            bootstrapResults[i] = np.percentile(
-                iData,
-                q=targetPerc,
-                interpolation=percInterpolation)
-
-        # down,nominal,up
-        quant = np.array([2.5, 97.5])
-        for i in range(numPercentiles):
-            down,  up = np.percentile(
-                bootstrapResults[:, i],
-                q=quant,
-                interpolation=percInterpolation)
-            self.Y[i] = 0.5 * (down+up)
-            self.Ydown[i] = down
-            self.Yup[i] = up
-
-    def _bootstrapNone(
-            self,
-            data,
-            simul,
-            targetPerc,
-            percInterpolation):
-        ''' Helper method when no bootstrap is used up=nominal=down'''
+            sortx, q=targetPerc)
         self.Y = np.percentile(
-            data,
-            q=targetPerc,
-            interpolation=percInterpolation)
-        self.Yup = self.Y
-        self.Ydown = self.Y
+            sorty, q=targetPerc)
+        self.Xup, self.Xlow = npCI(
+            sortx,
+            targetPerc/100.,
+            assume_sorted=True)
+        self.Yup, self.Ylow = npCI(
+            sorty,
+            targetPerc/100.,
+            assume_sorted=True)
 
     def savetxt(self, name):
         ''' save the result in a txt (csv) file

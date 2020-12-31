@@ -150,30 +150,33 @@ def compareMethods(data,
     fig.savefig(name, dpi=300)
 
 
-def compareCorrection(points,
-                      QMExact,
-                      NonParametric,
-                      NonParametricUnc,
-                      title,
-                      name):
+def compareCorrection(
+    points,
+        QMExact,
+        NonParametric,
+        NonParametricUncX,
+        NonParametricUncY,
+        title,
+        name):
     ExactColour = 'skyblue'
     QQColour = 'crimson'
 
     fig, ax = plt.subplots()
-    ax.scatter(points,
-               QMExact,
-               marker='.',
-               color=ExactColour,
-               s=4,
-               label='Exact QM')
     ax.errorbar(x=points,
                 y=NonParametric,
-                yerr=NonParametricUnc,
+                xerr=NonParametricUncX,
+                yerr=NonParametricUncY,
                 marker='.',
                 ls='none',
                 markersize=2,
                 color=QQColour,
                 label='Estimated QM')
+    ax.scatter(points,
+               QMExact,
+               marker='.',
+               color=ExactColour,
+               s=8,
+               label='Exact QM')
     ax.legend(loc='best')
     ax.set(xlabel='input ', ylabel='corrected input')
     ax.set_title(title)

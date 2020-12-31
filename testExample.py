@@ -12,15 +12,14 @@ from CommonPlottingHelper import (
 def testExample():
     '''
     Create a nominal and a distorted distribution
-
-    Apply:
+    Study :
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do not know the true model
     '''
-    shift = 0.1
-    smear = 1.1
-    NumData = 20000
-    NumSimul = 120000
+    shift = 0.5
+    smear = 1.5
+    NumData = 40000
+    NumSimul = 80000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
@@ -31,9 +30,19 @@ def testExample():
 
     # Do non-parametric QM correction
     QMqq = QMqqMap(
-        data,
         simul,
-        numBootstrap=2000)
+        data,
+        startPerc=0.5,
+        endPerc=99.5,
+        numPoints=100)
+
+    lowerErrorX = QMqq.X - QMqq.Xlow
+    upperErrorX = QMqq.Xup - QMqq.X
+    ErrorX = np.row_stack((lowerErrorX, upperErrorX))
+
+    lowerErrorY = QMqq.Y - QMqq.Ylow
+    upperErrorY = QMqq.Yup - QMqq.Y
+    ErrorY = np.row_stack((lowerErrorY, upperErrorY))
 
     # Compare the corrections derived into certain points
     compareCorrection(
@@ -41,7 +50,8 @@ def testExample():
         QMExact=parametricQM(
             QMqq.X, trueModel, distortedModel),
         NonParametric=QMqq.Y,
-        NonParametricUnc=(QMqq.Yup-QMqq.Y),
+        NonParametricUncX=ErrorX,
+        NonParametricUncY=ErrorY,
         title="Compare corrections",
         name="CorrectionCompare.png")
 
