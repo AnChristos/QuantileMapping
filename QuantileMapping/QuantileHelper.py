@@ -6,8 +6,8 @@ def npCI(data,
          sigma=1.96,
          assume_sorted=False):
     ''' Implements non-parametric intervals for quantiles following
-        "Confidence interval for quantiles and percentiles
-         Cristiano Ialongo"
+        "Confidence interval for quantiles and percentiles,
+         Cristiano Ialongo,  doi: 10.11613/BM.2019.010101"
 
         data : array of observasions
         q: Percentile or sequence of percentiles
