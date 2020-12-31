@@ -17,8 +17,8 @@ def testExampleInterpolation():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 10000
-    NumSimul = 40000
+    NumData = 40000
+    NumSimul = 80000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)

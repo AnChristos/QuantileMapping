@@ -28,13 +28,13 @@ def testExampleFit():
     '''
     shift = 0.5
     smear = 1.2
-    NumData = 10000
-    NumSimul = 40000
+    NumData = 40000
+    NumSimul = 80000
     trueModel = scipy.stats.norm()
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
-    numPoints = 50
+    numPoints = 100
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
@@ -55,8 +55,11 @@ def testExampleFit():
     # Fix colours for plotting
     exactColour = 'skyblue'
     approxColour = 'red'
-    lineColour = 'black'
-
+    lineColour = 'red'
+    approxColour = 'red'
+    dataColour = 'black'
+    exactColour = 'skyblue'
+    simulColour = 'forestgreen'
     # Compare estimated with exact QM
     fig, ax = plt.subplots()
 
@@ -86,8 +89,8 @@ def testExampleFit():
     guess = np.array([slopeguess, constguess])
 
     linear = scipy.odr.Model(f)
-    data = scipy.odr.Data(QMqq.X, QMqq.Y, wd=1./VX, we=1./VY)
-    odr = scipy.odr.ODR(data, linear, beta0=guess)
+    fitdata = scipy.odr.Data(QMqq.X, QMqq.Y, wd=1./VX, we=1./VY)
+    odr = scipy.odr.ODR(fitdata, linear, beta0=guess)
     output = odr.run()
     output.pprint()
 
@@ -121,6 +124,103 @@ def testExampleFit():
     ax.set(xlabel='Input ', ylabel='Corrected input')
     ax.set_title('Fitted line on q-q map vs Perfect QM Correction')
     fig.savefig('qqMapFit.png', dpi=300)
+
+    # Do not parametric using the fit
+    nonParamQMCorr = f(output.beta, simul)
+    # Do pefect parametric correction
+    exactQMCorr = parametricQM(simul, trueModel, distortedModel)
+    # Use interpolation for  the qq correction
+    interQMCorr = scipy.interpolate.interp1d(
+        QMqq.X,
+        QMqq.Y,
+        fill_value='extrapolate',
+        assume_sorted=True)
+    nonParamQMCorr = interQMCorr(simul)
+    # window for histograms
+    minhist = -5
+    maxhist = 5
+    histBins = 50
+    cdfBins = 100
+    binning = np.linspace(minhist, maxhist, histBins)
+    cdfbinning = np.linspace(minhist, maxhist, cdfBins)
+
+    # pdf histograms
+    fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=binning,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
+
+    # simulation
+    ax.hist(simul,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=simulColour,
+            label='simulation')
+
+    # exact QM
+    ax.hist(exactQMCorr,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=exactColour,
+            label='Exact QM')
+    # QM qq fitted
+    ax.hist(nonParamQMCorr,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=approxColour,
+            label='Fitted  QM qq ')
+    ax.legend(loc='best')
+    ax.set(xlabel='x', ylabel='pdf(x)')
+    ax.set_title("Compare pdf ")
+    fig.savefig("comparePdf.png", dpi=300)
+
+    # cdf histograms
+    fig, ax = plt.subplots()
+    # data
+    ax.hist(data,
+            bins=cdfbinning,
+            cumulative=1,
+            color=dataColour,
+            density=True,
+            histtype='step',
+            label='data')
+    # simulation
+    ax.hist(simul,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=simulColour,
+            label='simulation')
+
+    # exact QM
+    ax.hist(exactQMCorr,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=exactColour,
+            label='Exact QM')
+
+    # QM qq fitted
+    ax.hist(nonParamQMCorr,
+            bins=cdfbinning,
+            cumulative=1,
+            density=True,
+            histtype='step',
+            color=approxColour,
+            label='Fitted  QM qq ')
+    ax.legend(loc='upper left')
+    ax.set(xlabel='x', ylabel='cdf(x)')
+    ax.set_title("Compare CDF ")
+    fig.savefig("compareCDF.png", dpi=300)
 
 
 if __name__ == "__main__":
