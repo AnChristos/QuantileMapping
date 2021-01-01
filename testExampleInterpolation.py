@@ -23,14 +23,14 @@ def testExampleInterpolation():
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
-
+    numPoints = 50
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
         data,
         startPerc=1,
         endPerc=99,
-        numPoints=100,
+        numPoints=numPoints,
         sigma=1.96)
 
     # Fix colours for plotting

@@ -34,7 +34,7 @@ def testExampleFit():
     distortedModel = scipy.stats.norm(loc=shift, scale=smear)
     data = trueModel.rvs(size=NumData)
     simul = distortedModel.rvs(size=NumSimul)
-    numPoints = 100
+    numPoints = 50
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,

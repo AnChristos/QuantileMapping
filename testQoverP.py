@@ -24,7 +24,7 @@ def testQoverP():
     # an effect so is shifted
     data = np.loadtxt("Data_eta0.4_0.8_pt30_45_psec5_CB.txt")
     simul = np.loadtxt("MC_eta0.4_0.8_pt30_45_psec5_CB.txt")
-    numPoints = 100
+    numPoints = 50
     # Do non-parametric QM correction
     QMqq = QMqqMap(
         simul,
