@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.odr
+import scipy.interpolate
 from QuantileMapping.QMqqMap import (
     QMqqMap)
 
@@ -32,12 +33,17 @@ def testQoverP():
         endPerc=99,
         numPoints=numPoints)
 
-    QMqq.savetxt("qqPlot_qoverP.txt")
+    # Fix colours for plotting
+    lineColour = 'black'
+    approxColour = 'red'
+    splineColour = 'skyblue'
+    dataColour = 'black'
+    simulColour = 'forestgreen'
 
+    # uncertainy treatment
     Xminus = QMqq.X - QMqq.Xlow
     Xplus = QMqq.Xup - QMqq.X
     errorX = np.row_stack((Xminus, Xplus))
-
     Yminus = QMqq.Y - QMqq.Ylow
     Yplus = QMqq.Yup - QMqq.Y
     errorY = np.row_stack((Yminus, Yplus))
@@ -50,6 +56,7 @@ def testQoverP():
     diffSigmaY = (Yplus - Yminus) * 0.5
     VY = meanSigmaY * meanSigmaY + 2 * diffSigmaY * diffSigmaY
 
+    # Fit a line
     x1forguess = QMqq.X[int(numPoints*0.3)]
     x2forguess = QMqq.X[int(numPoints*0.7)]
     y1forguess = QMqq.Y[int(numPoints*0.3)]
@@ -57,23 +64,31 @@ def testQoverP():
     slopeguess = (y2forguess-y1forguess)/(x2forguess-x1forguess)
     constguess = y2forguess - slopeguess * x2forguess
     guess = np.array([slopeguess, constguess])
-
     linear = scipy.odr.Model(f)
     fitdata = scipy.odr.Data(QMqq.X, QMqq.Y, wd=1./VX, we=1./VY)
     odr = scipy.odr.ODR(fitdata, linear, beta0=guess)
     output = odr.run()
     output.pprint()
+    # Use smooth spline
+    splineRep = scipy.interpolate.splrep(
+        QMqq.X, QMqq.Y, w=1.0/np.sqrt(VY), k=3)
+    knots = splineRep[0]
+    coeff = splineRep[1]
+    degree = splineRep[2]
+    spline = scipy.interpolate.BSpline(
+        t=knots,
+        c=coeff,
+        k=degree)
 
-    approxColour = 'red'
-    lineColour = 'black'
-    approxColour = 'red'
-    dataColour = 'black'
-    simulColour = 'forestgreen'
     fig, ax = plt.subplots()
     ax.plot(QMqq.X,
             f(output.beta, QMqq.X),
             color=approxColour,
-            label='Fit of  QM q-q map')
+            label='Fit line')
+    ax.plot(QMqq.X,
+            spline(QMqq.X),
+            color=splineColour,
+            label='Spline')
     ax.errorbar(x=QMqq.X,
                 y=QMqq.Y,
                 xerr=errorX,
@@ -97,7 +112,8 @@ def testQoverP():
     fig.savefig('qqMapFit_relSigmaQoverP.png', dpi=300)
 
     # corrected simul
-    nonParamQMCorr = f(output.beta, simul)
+    nonParamQMCorrLine = f(output.beta, simul)
+    nonParamQMCorrSpline = spline(simul)
     # window for histograms
     minhist = 0.012
     maxhist = 0.025
@@ -122,12 +138,19 @@ def testQoverP():
             color=simulColour,
             label='simulation')
     # QM qq fitted
-    ax.hist(nonParamQMCorr,
+    ax.hist(nonParamQMCorrLine,
             bins=binning,
             density=True,
             histtype='step',
             color=approxColour,
-            label='Fitted  QM qq ')
+            label='Fitted QM qq ')
+    # QM qq fitted
+    ax.hist(nonParamQMCorrSpline,
+            bins=binning,
+            density=True,
+            histtype='step',
+            color=splineColour,
+            label='Spline QM qq ')
     ax.legend(loc='best')
     ax.set(xlabel='x', ylabel='pdf(x)')
     ax.set_title("Compare pdf ")

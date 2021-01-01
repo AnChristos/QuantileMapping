@@ -28,12 +28,19 @@ def testExampleInterpolation():
     QMqq = QMqqMap(
         simul,
         data,
-        startPerc=1.,
-        endPerc=99.,
+        startPerc=1,
+        endPerc=99,
         numPoints=100,
         sigma=1.96)
 
-    QMqq.savetxt("qqPlot.txt")
+    # Fix colours for plotting
+    lineColour = 'black'
+    dataColour = 'black'
+    exactColour = 'skyblue'
+    approxColour = 'red'
+    simulColour = 'forestgreen'
+
+    # uncertainty treatment
     Xminus = QMqq.X - QMqq.Xlow
     Xplus = QMqq.Xup - QMqq.X
     errorX = np.row_stack((Xminus, Xplus))
@@ -42,13 +49,21 @@ def testExampleInterpolation():
     Yplus = QMqq.Yup - QMqq.Y
     errorY = np.row_stack((Yminus, Yplus))
 
-    # Fix colours for plotting
-    dataColour = 'black'
-    exactColour = 'skyblue'
-    approxColour = 'red'
-    simulColour = 'forestgreen'
+    # Asymmetric Errors , Roger Barlow, PHYSTAT2003
+    meanSigmaY = (Yplus + Yminus) * 0.5
+    diffSigmaY = (Yplus - Yminus) * 0.5
+    VY = meanSigmaY * meanSigmaY + 2 * diffSigmaY * diffSigmaY
 
-    # Compare estimated with exact QM
+    splineRep = scipy.interpolate.splrep(
+        QMqq.X, QMqq.Y, w=1.0/np.sqrt(VY), k=3)
+    knots = splineRep[0]
+    coeff = splineRep[1]
+    degree = splineRep[2]
+    spline = scipy.interpolate.BSpline(
+        t=knots,
+        c=coeff,
+        k=degree)
+
     fig, ax = plt.subplots()
     ax.errorbar(x=QMqq.X,
                 y=QMqq.Y,
@@ -58,26 +73,22 @@ def testExampleInterpolation():
                 ls='none',
                 markersize=2,
                 color=approxColour,
-                label='Estimated QM')
+                label='q-q map points')
+    ax.plot(QMqq.X,
+            spline(QMqq.X),
+            color=lineColour,
+            label='Smooth spline q-q map')
     ax.plot(QMqq.X,
             parametricQM(QMqq.X, trueModel, distortedModel),
             color=exactColour,
             label='Exact QM')
     ax.legend(loc='best')
     ax.set(xlabel='Input ', ylabel='Corrected input')
-    ax.set_title('Estimated vs Perfect QM Correction')
-    fig.savefig('CorrectionCompare.png', dpi=300)
+    ax.set_title('Fitted line on q-q map vs Perfect QM Correction')
+    fig.savefig('qqMapSpline.png', dpi=300)
 
-    # Use interpolation for  the qq correction
-    # This makes it follow the exact estimated
-    # values and performs extrapolation out of bounds.
-    # Look example using Fit or consider smoothing
-    interQMCorr = scipy.interpolate.interp1d(
-        QMqq.X,
-        QMqq.Y,
-        fill_value='extrapolate',
-        assume_sorted=True)
-    nonParamQMCorr = interQMCorr(simul)
+    # Do not parametric using the spline
+    nonParamQMCorr = spline(simul)
     # Do pefect parametric correction
     exactQMCorr = parametricQM(simul, trueModel, distortedModel)
 

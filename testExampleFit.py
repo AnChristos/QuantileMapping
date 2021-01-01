@@ -39,26 +39,25 @@ def testExampleFit():
     QMqq = QMqqMap(
         simul,
         data,
-        startPerc=1.,
-        endPerc=99.,
+        startPerc=1,
+        endPerc=99,
         numPoints=numPoints,
         sigma=1.96)
 
+    # Fix colours for plotting
+    lineColour = 'black'
+    dataColour = 'black'
+    exactColour = 'skyblue'
+    approxColour = 'red'
+    simulColour = 'forestgreen'
+
+    # uncertainty treatment
     Xminus = QMqq.X - QMqq.Xlow
     Xplus = QMqq.Xup - QMqq.X
     errorX = np.row_stack((Xminus, Xplus))
-
     Yminus = QMqq.Y - QMqq.Ylow
     Yplus = QMqq.Yup - QMqq.Y
     errorY = np.row_stack((Yminus, Yplus))
-
-    # Fix colours for plotting
-    exactColour = 'skyblue'
-    lineColour = 'black'
-    approxColour = 'red'
-    dataColour = 'black'
-    exactColour = 'skyblue'
-    simulColour = 'forestgreen'
 
     # Asymmetric Errors , Roger Barlow, PHYSTAT2003
     meanSigmaX = (Xplus + Xminus) * 0.5
@@ -68,6 +67,7 @@ def testExampleFit():
     diffSigmaY = (Yplus - Yminus) * 0.5
     VY = meanSigmaY * meanSigmaY + 2 * diffSigmaY * diffSigmaY
 
+    # fit a straight line
     x1forguess = QMqq.X[int(numPoints*0.3)]
     x2forguess = QMqq.X[int(numPoints*0.7)]
     y1forguess = QMqq.Y[int(numPoints*0.3)]
