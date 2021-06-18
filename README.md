@@ -2,7 +2,6 @@
 
 Playground for testing Quantile Mapping 
 
-
 function ParametricQM 
 ----------------------------------------------------
 Module : QuantileMapping.ParametricQM
