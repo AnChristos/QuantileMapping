@@ -52,7 +52,7 @@ def correction(inputMC, pseudoData, distortion):
     x = ROOT.RooRealVar("x", "x", hMin, hMax)
     # data (what we want to fit to)
     data = ROOT.RooDataHist("data", "data", x, hPseudoData)
-    # create an probability denisty function
+    # create an probability density function
     # for the MC
     hRooMC = ROOT.RooDataHist("hRooMC", "hRooMC", x, hMC)
     hpdfMC = ROOT.RooHistPdf("hpdfMC", "hpdfMC", x, hRooMC, 0)
@@ -65,9 +65,11 @@ def correction(inputMC, pseudoData, distortion):
         estSmear, 0.0, 1.5 * estSmear)
     gauss = ROOT.RooGaussian("gauss", "gauss", x, meanG, sigmaG)
 
-    # The actual convolution
+    # The actual convolution model
     histXGaus = ROOT.RooFFTConvPdf(
         "histXGaus", "histo (X) gauss", x, hpdfMC, gauss)
+    # Let's fit the model to the data so as to get
+    # the parameters for the Gauss
     histXGaus.fitTo(data)
     print("fitted mean", meanG.getVal())
     print("fitted sigma ", sigmaG.getVal())
