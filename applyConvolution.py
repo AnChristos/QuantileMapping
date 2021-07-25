@@ -88,7 +88,7 @@ def correction(inputMC, inputData):
     legend.AddEntry(xframe.findObject("Convolutionpdf"),
                     "Convolution Corrected")
     legend.Draw()
-    c1.SaveAs("testFit.pdf")
+    c1.SaveAs("applyFit.pdf")
 
 
 if __name__ == "__main__":
