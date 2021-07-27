@@ -8,7 +8,7 @@ def convertToArray(filename):
     '''convert branch from Kamal's christmas file
     to numpy'''
     rootFile = ROOT.TFile.Open(filename)
-    tree = rootFile.Get("subtree")
+    tree = rootFile.Get("MC_eta0_0.4_pt50_60_phi-0.965_-0.605_CB")
     list_tmp = []
     for event in tree:
         v = event.sigma_qp
@@ -16,8 +16,8 @@ def convertToArray(filename):
             list_tmp.append(i)
     tmp = np.array(list_tmp)
     sort_tmp = np.sort(tmp)
-    low = np.percentile(sort_tmp, 0.5)
-    up = np.percentile(sort_tmp, 99.5)
+    low = np.percentile(sort_tmp, 0.25)
+    up = np.percentile(sort_tmp, 99.75)
     return sort_tmp[(sort_tmp > low) & (sort_tmp < up)]
 
 
@@ -89,7 +89,7 @@ def correction(inputMC, pseudoData, distortion):
 
 
 if __name__ == "__main__":
-    MC = convertToArray("MC_eta0.4_0.8_pt30_45_psec5_CB.root")
+    MC = convertToArray("MC_eta0_0.4_pt50_60_phi-0.965_-0.605_CB.root")
     print("entries", len(MC))
     distortion, pseudoData = applyDistortion(MC)
     correction(MC, pseudoData, distortion)
