@@ -7,12 +7,12 @@ def testExampleFit():
     '''
     Create a nominal and a distorted distribution
     '''
-    NumData = 10000
-    NumSimul = 20000
-    trueModel = scipy.stats.moyal(loc=1, scale=1.2)
-    distortedModel = scipy.stats.moyal(loc=4, scale=0.7)
-    data = trueModel.rvs(size=NumData)
-    simul = distortedModel.rvs(size=NumSimul)
+    NumData = 100000
+    trueModel = scipy.stats.norm(loc=0, scale=0.9)
+    distortion = scipy.stats.norm(loc=1.0, scale=0.9)
+    simul = trueModel.rvs(size=NumData)
+    distorted = distortion.rvs(size=NumData)
+    data = simul + distorted
 
     # variance scaling
     mean_data = np.mean(data)
@@ -26,22 +26,27 @@ def testExampleFit():
     # shift everything to 0 mean
     mean_shifted_simul = np.mean(meanCorrectedSimul)
     zero_mean_simul = meanCorrectedSimul - mean_shifted_simul
-    zero_mean_data = data - mean_data
     # And then calculate the ratio of the data simul sigma
-    sigma_data = np.std(zero_mean_data)
+    sigma_data = np.std(data)
     sigma_simul = np.std(zero_mean_simul)
     sigma_ratio = sigma_data/sigma_simul
     # The final corrected one
     corrected = zero_mean_simul * sigma_ratio + mean_shifted_simul
 
+    # check that the 2 first moments are now close
+    print("original MC mean ", np.mean(simul),
+          " pseudodata mean ", np.mean(data),
+          " corrected mean", np.mean(corrected))
+    print("original MC sigma ", np.std(simul),
+          " pseudodata sigma ", np.std(data),
+          " corrected sigma", np.std(corrected))
     # Plotting follows ....
     # Fix colours for plotting
     dataColour = 'black'
-    ShiftColour = 'blue'
     VARIColour = 'red'
     simulColour = 'forestgreen'
 
-    histBins = 40
+    histBins = 100
     # window for histograms
     sortedsimul = np.sort(simul)
     sorteddata = np.sort(data)
@@ -66,14 +71,6 @@ def testExampleFit():
             histtype='step',
             color=simulColour,
             label='simulation')
-
-    # corrected simulation
-    ax.hist(meanCorrectedSimul,
-            bins=binning,
-            density=True,
-            histtype='step',
-            color=ShiftColour,
-            label='mean corrrected simulation ')
 
     # corrected simulation
     ax.hist(corrected,
