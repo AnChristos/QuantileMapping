@@ -51,11 +51,11 @@ def correction(inputMC, pseudoData, distortion):
     # variable for the observable
     x = ROOT.RooRealVar("x", "x", hMin, hMax)
     # data (what we want to fit to)
-    data = ROOT.RooDataHist("data", "data", x, hPseudoData)
+    data = ROOT.RooDataHist("data", "data", ROOT.RooArgList(x), hPseudoData)
     # create an probability density function
     # for the MC
-    hRooMC = ROOT.RooDataHist("hRooMC", "hRooMC", x, hMC)
-    hpdfMC = ROOT.RooHistPdf("hpdfMC", "hpdfMC", x, hRooMC, 0)
+    hRooMC = ROOT.RooDataHist("hRooMC", "hRooMC", ROOT.RooArgList(x), hMC)
+    hpdfMC = ROOT.RooHistPdf("hpdfMC", "hpdfMC", ROOT.RooArgSet(x), hRooMC, 0)
 
     # A Gaussian we convolve with
     meanG = ROOT.RooRealVar("meanG", "meanG", estShift,
