@@ -62,7 +62,7 @@ def correction(inputMC, inputData):
         "histXGaus", "histo (X) gauss", x, hpdfMC, gauss)
     # Let's fit the model to the data so as to get
     # the parameters for the Gauss
-    histXGaus.fitTo(data)
+    histXGaus.fitTo(data, ROOT.RooFit.Save())
     print("fitted mean", meanG.getVal())
     print("fitted sigma ", sigmaG.getVal())
 
@@ -89,6 +89,25 @@ def correction(inputMC, inputData):
                     "Convolution Corrected")
     legend.Draw()
     c1.SaveAs("applyFit.pdf")
+
+    # ROOT style plotting of 2 histos
+    c2 = ROOT.TCanvas("c2", "c2")
+    c2.cd()
+
+    # create a histo from the model (This is integral 1)
+    hCorr = histXGaus.createHistogram(
+        "hCorr", x, ROOT.RooFit.Binning(numBins, hMin, hMax))
+    #we want to scale it to the Data
+    hCorr.Scale(hinputData.Integral()/hCorr.Integral(), "nosw2")
+    hMC.Scale(hinputData.Integral()/hMC.Integral())
+    hMC.SetLineColor(ROOT.kRed+1)
+    hinputData.SetLineColor(ROOT.kBlack)
+    hCorr.SetLineColor(ROOT.kSpring-6)
+    hCorr.Sumw2()
+    hMC.Draw("HISTO")
+    hinputData.Draw("SAMEHISTO")
+    hCorr.Draw("SAMEHISTO")
+    c2.SaveAs("applyFitROOTStyle.pdf")
 
 
 if __name__ == "__main__":
