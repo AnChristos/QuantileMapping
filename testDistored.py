@@ -15,8 +15,8 @@ def testExampleInterpolation():
      - exact parametric QM since we know the exact true model
      - non parametric QM pretending we do not know the true model
     '''
-    shift = 0.2
-    smear = 1.5
+    shift = 0.7
+    smear = 2
     NumData = 10000
     NumSimul = 10000
     trueModel = scipy.stats.norm()
