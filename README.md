@@ -2,7 +2,6 @@
 
 Playground for testing Quantile Mapping 
 
-
 function ParametricQM 
 ----------------------------------------------------
 Module : QuantileMapping.ParametricQM
@@ -35,7 +34,7 @@ Cristiano Ialongo
 doi: 10.11613/BM.2019.010101
 
 
-Example 1 : testExampleFit
+Example  : testExampleFit
 ------------------------------
 
 Introduce distortion to a normal distibution.
@@ -44,13 +43,6 @@ Derive a correction by fitting the quantile-quantile plot
 
 Compare it with the known exact Quantile Map correction 
 
-Example 2 : testExampleInterpolation
-------------------------------
-
-Introduce distortion to a normal distibution.
-
-Derive a correction by interpolating the quantile-quantile plot
-
-Compare it with the known exact Quantile Map correction.
+Compare it with the Shift and Stretch.
 
 
